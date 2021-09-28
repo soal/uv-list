@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "lit";
+import { LitElement, html, css, render } from "lit";
 import {
   customElement,
   property,
@@ -7,8 +7,17 @@ import {
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { Ref, ref, createRef } from "lit/directives/ref.js";
-import { UVListItem } from "./@types";
+import { UVListItem, UVListView } from "./@types";
 import "./uv-list-element.ts";
+
+const renderElementToFragment = (view, initialSize) => {
+  const fragment = document.createDocumentFragment()
+  const template = html`
+    <uv-list-element .view="${view}" .initialSize="${initialSize}"></uv-list-element>
+  `
+  // return render(template, fragment)
+  return template
+}
 
 @customElement("uv-list")
 export default class UVList extends LitElement {
@@ -40,6 +49,7 @@ export default class UVList extends LitElement {
   private wrapperTop = 0;
   private wrapperBottom = 0;
   private sizes = {};
+  private views = [];
 
   firstUpdated() {
     const { top, height } = this.wrapperRef.value.getBoundingClientRect();
@@ -48,8 +58,14 @@ export default class UVList extends LitElement {
     const count = height / this.initialSize + 10;
 
     this.visibleItems = this.items.slice(0, count);
+    this.views = this.visibleItems.map(item => ({
+      item,
+      uid: Math.floor(Math.random() * 10000000)
+    }))
+
+    const renderedView = renderElementToFragment(this.views[0], this.initialSize)
+    console.log(renderedView)
     // this.requestUpdate()
-    console.log(this.items, this.visibleItems);
   }
 
   private updateVisibleItems() {
@@ -74,22 +90,23 @@ export default class UVList extends LitElement {
       >
         <div class="uv-list__scroller" ${ref(this.scrollerRef)}>
           ${repeat(
-            this.visibleItems,
-            (item: UVListItem) => item.id,
-            (item, index) => html`
-              <uv-list-element
-                .initialSize="${this.initialSize}"
-                .index="${index}"
-                .item="${item}"
-              >
-              </uv-list-element>
-            `
+            this.views,
+            (view: UVListView) => view.uid,
+            (view, index) => renderElementToFragment(view, this.initialSize)
           )}
         </div>
       </div>
     `;
   }
 }
+// html`
+              // <uv-list-element
+                // .initialSize="${this.initialSize}"
+                // .index="${index}"
+                // .view="${view}"
+              // >
+              // </uv-list-element>
+            // `
 // <slot> ${index}. ${item.content}</slot>
 //        ${this.items.map(item => html`<div>${item}</div>`)}
 declare global {

@@ -1,12 +1,12 @@
 import { LitElement, html, css } from "lit";
 import { customElement, property, eventOptions } from "lit/decorators.js";
 import { Ref, ref, createRef } from "lit/directives/ref.js";
-import { UVListItem } from "./@types";
+import { UVListView } from "./@types";
 
 @customElement("uv-list-element")
 export default class UVListElement extends LitElement {
   @property({ type: Object })
-  item: UVListItem = { id: 0, content: "Dummy content" };
+  view: UVListView;
 
   @property({ type: String })
   uid: string;
@@ -15,18 +15,15 @@ export default class UVListElement extends LitElement {
   initialSize: number = 0;
 
   static styles = css`
-    :host {
-      display: block;
-    }
     .uv-list__element {
-      display: block;
+      border-bottom: 1px solid #ccc;
     }
   `;
 
   protected render() {
     return html`
       <div class="uv-list__element" style="min-height: ${this.initialSize}px;">
-        ${this.item.content}
+        ${this.view.item.content}
       </div>
     `;
   }
