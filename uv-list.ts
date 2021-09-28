@@ -14,33 +14,20 @@ export default class UVList extends LitElement {
   items: Item[] = []
 
   @property({ type: Number })
-  initialSize: number = 30;
+  initialSize: number = 0;
 
   static styles = css`
     :host {
       height: 100%;
       display: flex;
       flex-direction: column;
-      /*width: 100%;*/
-    }
-    h1 {
-      font-size: 42px;
-    }
-    .uv-list {
-      flex: 1 1 auto;
-      height: 100%;
-      width: 100%;
-    }
-    .uv-list__wrapper {
-      padding: 0 1rem;
-      width: 100%;
+      overflow-y: auto;
     }
   `;
 
   protected render() {
     return html`
-      <h1>Universal list</h1>
-      <div class="uv-list__wrapper">
+      <div class="uv-list__scroller">
        ${repeat(
         this.items,
         (item: Item) => item.id,
