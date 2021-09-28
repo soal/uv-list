@@ -1,20 +1,25 @@
 import { LitElement, html, css } from "lit";
-import { customElement, property, eventOptions } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  eventOptions,
+  state,
+} from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { Ref, ref, createRef } from "lit/directives/ref.js";
-
-type Item = {
-  id: string | number;
-  content: string;
-};
+import { UVListItem } from "./@types";
+import "./uv-list-element.ts";
 
 @customElement("uv-list")
 export default class UVList extends LitElement {
   @property({ type: Array })
-  items: Item[] = [];
+  items: UVListItem[] = [];
 
   @property({ type: Number })
   initialSize: number = 0;
+
+  @state()
+  private visibleItems: UVListItem[] = [];
 
   static styles = css`
     :host {
