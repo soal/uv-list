@@ -33,42 +33,56 @@ export default class UVList extends LitElement {
     }
   `;
 
-  scrollerRef: Ref<HTMLDivElement> = createRef();
-  wrapperRef: Ref<HTMLDivElement> = createRef();
-  scrollerStart = 0
-  scrollerEnd = 0
-  wrapperTop = 0
-  wrapperBottom = 0
+  private scrollerRef: Ref<HTMLDivElement> = createRef();
+  private wrapperRef: Ref<HTMLDivElement> = createRef();
+  private scrollerStart = 0;
+  private scrollerEnd = 0;
+  private wrapperTop = 0;
+  private wrapperBottom = 0;
+  private sizes = {};
 
   firstUpdated() {
-    const { top, height } = this.wrapperRef.value.getBoundingClientRect()
-    this.wrapperTop = top
-    this.wrapperBottom = top + height
+    const { top, height } = this.wrapperRef.value.getBoundingClientRect();
+    this.wrapperTop = top;
+    this.wrapperBottom = top + height;
+    const count = height / this.initialSize + 10;
+
+    this.visibleItems = this.items.slice(0, count);
+    // this.requestUpdate()
+    console.log(this.items, this.visibleItems);
+  }
+
+  private updateVisibleItems() {
+    console.log("UPDATE!");
   }
 
   @eventOptions({ passive: true })
   private _handleScroll(e: Event) {
     requestAnimationFrame(() => {
-      const scrollerRect = this.scrollerRef.value.getBoundingClientRect()
-      this.scrollerStart = scrollerRect.top - this.wrapperTop
-      this.scrollerEnd = scrollerRect.top + scrollerRect.height
-    })
+      const scrollerRect = this.scrollerRef.value.getBoundingClientRect();
+      this.scrollerStart = scrollerRect.top - this.wrapperTop;
+      this.scrollerEnd = scrollerRect.top + scrollerRect.height;
+    });
   }
 
   protected render() {
     return html`
-      <div class="uv-list__wrapper" ${ref(this.wrapperRef)} @scroll="${this._handleScroll}">
+      <div
+        class="uv-list__wrapper"
+        ${ref(this.wrapperRef)}
+        @scroll="${this._handleScroll}"
+      >
         <div class="uv-list__scroller" ${ref(this.scrollerRef)}>
           ${repeat(
-            this.items,
-            (item: Item) => item.id,
+            this.visibleItems,
+            (item: UVListItem) => item.id,
             (item, index) => html`
-              <div
-                style="min-height: ${this.initialSize}px;"
-                class="uv-list__element"
+              <uv-list-element
+                .initialSize="${this.initialSize}"
+                .index="${index}"
+                .item="${item}"
               >
-                <slot> ${index}. ${item.content} </slot>
-              </div>
+              </uv-list-element>
             `
           )}
         </div>
@@ -76,4 +90,10 @@ export default class UVList extends LitElement {
     `;
   }
 }
+// <slot> ${index}. ${item.content}</slot>
 //        ${this.items.map(item => html`<div>${item}</div>`)}
+declare global {
+  interface HTMLElementTagNameMap {
+    "uv-list": UVList;
+  }
+}
