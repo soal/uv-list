@@ -17,8 +17,28 @@ export default class UVListElement extends LitElement {
   static styles = css`
     .uv-list__element {
       border-bottom: 1px solid #ccc;
+      padding: 0.5rem;
     }
   `;
+
+  updated() {
+    this.dispatchRendered(
+      this.renderRoot.firstElementChild.getBoundingClientRect().height
+    );
+  }
+
+  dispatchRendered(height: number) {
+    const item = this.view.item;
+    const event = new CustomEvent("rendered", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        item,
+        height,
+      },
+    });
+    this.dispatchEvent(event);
+  }
 
   protected render() {
     return html`
