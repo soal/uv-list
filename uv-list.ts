@@ -13,6 +13,17 @@ import { UVListItem, UVListView } from "./@types";
 import "./uv-list-element.ts";
 import UVListElement from "./uv-list-element";
 
+enum ViewPosition {
+  Start = -1,
+  Inside = 0,
+  End = 1,
+}
+
+const createView = (item: UVListItem = null): UVListView => ({
+  item,
+  uid: Math.floor(Math.random() * 10000000),
+});
+
 @customElement("uv-list")
 export default class UVList extends LitElement {
   @property({ type: Array })
@@ -36,6 +47,9 @@ export default class UVList extends LitElement {
   @state()
   private scrollerEnd = 0;
 
+  @state()
+  private scrollerSize = 0;
+
   static styles = css`
     :host {
       height: 100%;
@@ -47,47 +61,40 @@ export default class UVList extends LitElement {
       overflow-y: auto;
     }
   `;
-  @state()
-  private scrollerSize = 0;
 
   private scrollerRef: Ref<HTMLDivElement> = createRef();
   private wrapperRef: Ref<HTMLDivElement> = createRef();
   private wrapperTop = 0;
-  // private wrapperBottom = 0;
+  private scrollDirection = 0;
+  private wrapperBottom = 0;
   // private sizes: WeakMap<UVListItem, number> = new WeakMap();
   private itemsMap: WeakMap<UVListItem, any> = new WeakMap();
+  private unusedViews = [];
   // private itemIds = [];
 
   firstUpdated() {
     const { top, height } = this.wrapperRef.value.getBoundingClientRect();
     this.wrapperTop = top;
-    // this.wrapperBottom = top + height;
+    this.wrapperBottom = top + height;
     const count = height / this.initialSize + 6;
 
     this.items.forEach((item, index, items) => {
       // this.itemIds.push(item.id)
       // this.sizes.set(item, this.initialSize)
-      if (index === 0) {
-        this.itemsMap.set(item, {
-          getStart: () => 0,
-          getEnd: () => this.initialSize,
-        });
-      } else {
-        const coordinates = {
-          getStart: () => this.itemsMap.get(items[index - 1]).getEnd() + 1,
-          size: this.initialSize,
-          getEnd: () => coordinates.getStart() + coordinates.size,
-        };
-        this.itemsMap.set(item, coordinates);
-      }
+      // TODO: Add memoization to getStart and getEnd
+      const coordinates = {
+        getStart: () =>
+          index === 0 ? 0 : this.itemsMap.get(items[index - 1]).getEnd() + 1,
+        size: this.initialSize,
+        getEnd: () => coordinates.getStart() + coordinates.size,
+      };
+      this.itemsMap.set(item, coordinates);
       if (index < count) {
-        this.visibleItems.push(item);
-        this.views.push({
-          item,
-          uid: Math.floor(Math.random() * 10000000),
-        });
+        // this.visibleItems.push(item);
+        this.views.push(createView(item));
       }
     });
+    this.unusedViews.push(createView());
     this.scrollerSize = this.items.length * this.initialSize;
 
     // this.itemIds = this.items.map(item => item.id)
@@ -99,22 +106,30 @@ export default class UVList extends LitElement {
     // console.log(this);
   }
 
-  updated(changedProperties) {
-    if (
-      changedProperties.get("scrollerStart") !== undefined &&
-      changedProperties.get("scrollerEnd") !== undefined
-    ) {
-      this.updateVisibleItems();
-    }
-  }
+  // updated(changedProperties) {
+  //   if (
+  //     changedProperties.get("scrollerStart") !== undefined &&
+  //     changedProperties.get("scrollerEnd") !== undefined
+  //   ) {
+  //     this.updateVisibleItems();
+  //   }
+  // }
 
   @eventOptions({ passive: true })
-  private _handleScroll(e: Event) {
+  private _handleScroll() {
     // requestAnimationFrame(() => {
-      const scrollerRect = this.scrollerRef.value.getBoundingClientRect();
-      this.scrollerStart = scrollerRect.top - this.wrapperTop;
-      this.scrollerEnd = scrollerRect.top + scrollerRect.height;
-      // this.scrollerPadding = this.scrollerRef.value.scrollTop
+    const scrollerRect = this.scrollerRef.value.getBoundingClientRect();
+    const newStart = scrollerRect.top - this.wrapperTop;
+    if (newStart < this.scrollerStart) {
+      this.scrollDirection = 1;
+    } else {
+      this.scrollDirection = -1;
+    }
+    this.scrollerStart = newStart;
+    this.scrollerEnd = scrollerRect.top + scrollerRect.height;
+    this.updateVisibleItems();
+    // this.scrollerSize = newStart + this.scrollerSize
+    // this.scrollerPadding = this.scrollerRef.value.scrollTop
     // });
   }
 
@@ -127,55 +142,170 @@ export default class UVList extends LitElement {
     this.scrollerSize = this.scrollerSize - oldSize + height;
   }
 
-  private updateVisibleItems() {
-    let usedViewsIndex = -1;
-    const views = this.views;
-    for (let item of this.items) {
-      const { getStart, getEnd } = this.itemsMap.get(item);
-      const start = getStart()
-      const end = getEnd()
-      const isOnStart =
-        end + this.scrollerStart >= 0 && start + this.scrollerStart < 0;
-      const isInside =
-        start + this.scrollerStart >= 0 && end <= this.scrollerEnd;
-      const isOnEnd =
-        end >= this.scrollerEnd && start < this.scrollerEnd;
+  private checkIsItemVisible(
+    item: UVListItem
+  ): { visible: boolean; position: ViewPosition } {
+    const { getStart, getEnd } = this.itemsMap.get(item);
+    const start = getStart();
+    const end = getEnd();
+    // console.log(item.id, start, end, this.scrollerStart);
+    const isOnStart =
+      end + this.scrollerStart >= 0 && start + this.scrollerStart < 0;
+    if (isOnStart) {
+      return { visible: true, position: -1 };
+    }
+    const isInside =
+      start + this.scrollerStart >= 0 &&
+      end + this.scrollerStart + this.wrapperTop <= this.wrapperBottom;
+    if (isInside) return { visible: true, position: 0 };
 
-      if (isOnStart || isInside || isOnEnd) {
-        let view = views[++usedViewsIndex];
-        // console.log(usedViewsIndex, view)
-        // console.log(view)
-        if (view && view.item.id !== item.id) {
-          view.item = item;
+    const isOnEnd =
+      start + this.scrollerStart + this.wrapperTop <= this.wrapperBottom &&
+      end + this.scrollerStart + this.wrapperTop > this.wrapperBottom;
+    if (isOnEnd) return { visible: true, position: 1 };
+
+    if (end + this.scrollerStart < 0) return { visible: false, position: -1 };
+
+    return { visible: false, position: 1 };
+  }
+
+  private unuseView(item: UVListItem) {
+    /*
+     * If scrolling to end (this.scrollerPostion === 0),
+     * then unuse view from the start of list,
+     * else — from the end
+     */
+    // const predicate =
+    //   visible === false && this.scrollDirection > 0
+    //     ? position < 0
+    //     : position > 0;
+
+    let viewIndex = null;
+    const view = this.views.find((view, index) => {
+      if (view.item.id === item.id) {
+        viewIndex = index;
+        return true;
+      }
+    });
+
+    if (view) {
+      this.views.splice(viewIndex, 1);
+      // view.item = null;
+      this.unusedViews.push(view);
+      // await this.updateComplete;
+      return view;
+    }
+    return null;
+  }
+
+  private updateVisibleItems() {
+    /*
+     * Naive non-optimized implementation.
+     * Always calculate visibility for all items.
+     */
+    for (let i = 0; i < this.items.length; i++) {
+      const item = this.items[i];
+      const { visible, position } = this.checkIsItemVisible(item);
+      if (visible) {
+        // const nextItem = this.items[i + 1];
+        // if (nextItem) {
+        //   const nextItemVisibility = this.checkIsItemVisible(nextItem);
+        //   if (!nextItemVisibility.visible && nextItemVisibility.position > 0) {
+        //     console.log(nextItem.id)
+        //     let unusedView = this.unusedViews.pop() ?? createView();
+        //     // if (!unusedView) {
+        //     //   unusedView = createView()
+        //     // }
+        //     unusedView.item = nextItem;
+        //     this.views.push(unusedView);
+        //   }
+        // }
+        if (this.views.find((view) => view.item.id === item.id)) {
+          continue;
+        }
+        const unusedView = this.unusedViews.pop() ?? createView();
+        unusedView.item = item;
+        if (this.scrollDirection > 0) {
+          this.views.push(unusedView);
+        } else {
+          this.views.unshift(unusedView);
+        }
+      } else {
+        if (this.scrollDirection > 0) {
+          if (position < 0) {
+            this.unuseView(item);
+          }
+          // const prevItem = this.items[i - 1]
+          // if (prevItem) {
+          //   const prevItemVisibility = this.checkIsItemVisible(prevItem)
+          //   if ()
+          // }
+        }
+        if (this.scrollDirection < 0 && position > 0) {
+          this.unuseView(item);
         }
       }
+      //   if (visible) {
+      //     // const view = this.unusedViews.pop();
+      //     // console.log(view)
+      //     //
+      //     // view.item = item;
+      //     // if (position > 0) {
+      //     //   this.views.push(view);
+      //     // } else {
+      //     //   this.views.unshift(view);
+      //     // }
+      //   } else {
+      //     this.unuseView(item, visible, position);
+      //   }
+
+      // const { getStart, getEnd } = this.itemsMap.get(item);
+      // const start = getStart();
+      // const end = getEnd();
+      // const isOnStart =
+      //   end + this.scrollerStart >= 0 && start + this.scrollerStart < 0;
+      // const isInside =
+      //   start + this.scrollerStart >= 0 && end <= this.scrollerEnd;
+      // const isOnEnd = end >= this.scrollerEnd && start < this.scrollerEnd;
+
+      // if (isOnStart || isInside || isOnEnd) {
+      //   let view = views[++usedViewsIndex];
+      //   // console.log(usedViewsIndex, view)
+      //   // console.log(view)
+      //   if (view && view.item.id !== item.id) {
+      //     view.item = item;
+      //   }
+      // }
     }
     // console.log('UPDATE', views)
-    this.views = views;
+    // this.views = views;
     // this.requestUpdate()
     // this.renderQueue = this.renderList();
   }
 
-  renderElementToFragment(view, initialSize) {
-    const fragment = document.createDocumentFragment();
+  renderElementToFragment(view) {
+    // const fragment = document.createDocumentFragment();
     const template = html`
       <uv-list-element
         .view="${view}"
-        .initialSize="${initialSize}"
+        .itemId="${view.item.id}"
+        .initialSize="${this.initialSize}"
       ></uv-list-element>
     `;
-    render(template, fragment);
-    return fragment;
+    // render(template, fragment);
+    // return fragment;
+    return template;
   }
 
   async *renderList() {
     for (let view of this.views) {
-      yield new Promise((resove, reject) => {
+      yield new Promise((resolve, reject) => {
         // requestAnimationFrame(() => {
-        const fragment = this.renderElementToFragment(view, this.initialSize);
+        // const fragment = this.renderElementToFragment(view, this.initialSize);
         // this.sizes.set(view.item, fragment.firstElementChild.offsetHeight)
         // console.log(fragment.firstElementChild)
-        resove(fragment);
+        // resove(fragment);
+        resolve(this.renderElementToFragment(view));
       });
       // });
     }
@@ -193,6 +323,7 @@ export default class UVList extends LitElement {
   // }
 
   protected render() {
+    const scrollerSize = this.scrollerSize + this.scrollerStart;
     return html`
       <div
         class="uv-list__wrapper"
@@ -201,15 +332,22 @@ export default class UVList extends LitElement {
       >
         <div
           class="uv-list__scroller"
-          style="height: ${this.scrollerSize}px; padding-top: ${-this.scrollerStart}px"
+          style="height: ${scrollerSize}px; padding-top: ${-this
+            .scrollerStart}px"
           ${ref(this.scrollerRef)}
           @rendered="${this.handleRendered}"
         >
           ${repeat(
             this.views,
-            (view: UVListView) => view.uid,
-            (view, index) =>
-              this.renderElementToFragment(view, this.initialSize)
+            (view) => view.uid,
+            // (view) => this.renderElementToFragment(view)
+            (view) => html`
+              <uv-list-element
+                .view="${view}"
+                .itemId="${view.item.id}"
+                .initialSize="${this.initialSize}"
+              ></uv-list-element>
+            `
           )}
         </div>
       </div>

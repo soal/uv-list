@@ -11,6 +11,9 @@ export default class UVListElement extends LitElement {
   @property({ type: String })
   uid: string;
 
+  @property({ type: [Number, String] })
+  itemId: string | number;
+
   @property({ type: Number })
   initialSize: number = 0;
 
@@ -39,6 +42,15 @@ export default class UVListElement extends LitElement {
     });
     this.dispatchEvent(event);
   }
+
+  // async performUpdate() {
+  //   // Unblock main thread while rendering component
+  //   const promise: Promise<void> = new Promise((resolve) =>
+  //     setTimeout(() => resolve())
+  //   );
+  //   await promise;
+  //   return super.performUpdate();
+  // }
 
   protected render() {
     return html`
