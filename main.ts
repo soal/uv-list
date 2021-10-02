@@ -271,7 +271,7 @@ const items = [
 render(
   html`
     <div id="global-wrapper">
-      <uv-list .initialSize="${50}" .items="${items}"></uv-list>
+      <uv-list .nonBlockingRender="${true}" .initialSize="${50}" .items="${items}"></uv-list>
     </div>
   `,
   document.querySelector("#app") as HTMLElement

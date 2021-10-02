@@ -6,12 +6,12 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
-import { asyncAppend } from "lit/directives/async-append.js";
-import { until } from "lit/directives/until.js";
+// import { asyncAppend } from "lit/directives/async-append.js";
+// import { until } from "lit/directives/until.js";
 import { Ref, ref, createRef } from "lit/directives/ref.js";
 import { UVListItem, UVListView } from "./@types";
 import "./uv-list-element.ts";
-import UVListElement from "./uv-list-element";
+// import UVListElement from "./uv-list-element";
 
 enum ViewPosition {
   Start = -1,
@@ -37,6 +37,9 @@ export default class UVList extends LitElement {
 
   @property({ type: Number })
   buffer = 100;
+
+  @property({ type: Boolean })
+  nonBlockingRender = true;
 
   // @state()
   private views = [];
@@ -100,30 +103,30 @@ export default class UVList extends LitElement {
     // this.renderQueue = this.renderList();
   }
 
-  // updated(changedProperties) {
-  //   console.log(changedProperties);
-  //   // if (
-  //   //   changedProperties.get("scrollerStart") !== undefined &&
-  //   //   changedProperties.get("scrollerEnd") !== undefined
-  //   // ) {
-  //   //   this.updateVisibleItems();
-  //   // }
-  // }
-  private animationFrame = null;
+  async performUpdate() {
+    if (this.nonBlockingRender) {
+      // Unblock main thread while rendering component
+      const promise: Promise<void> = new Promise((resolve) =>
+        setTimeout(() => resolve())
+      );
+      await promise;
+    }
+    return super.performUpdate();
+  }
 
   @eventOptions({ passive: true })
   private _handleScroll() {
     // cancelAnimationFrame(this.animationFrame)
     // this.animationFrame = requestAnimationFrame(() => {
-      const scrollerRect = this.scrollerRef.value.getBoundingClientRect();
-      const newStart = scrollerRect.top - this.wrapperTop;
-      if (newStart < this.scrollerStart) {
-        this.scrollDirection = 1;
-      } else {
-        this.scrollDirection = -1;
-      }
-      this.scrollerStart = newStart;
-      this.updateVisibleItems();
+    const scrollerRect = this.scrollerRef.value.getBoundingClientRect();
+    const newStart = scrollerRect.top - this.wrapperTop;
+    if (newStart < this.scrollerStart) {
+      this.scrollDirection = 1;
+    } else {
+      this.scrollDirection = -1;
+    }
+    this.scrollerStart = newStart;
+    this.updateVisibleItems();
     // });
   }
 
@@ -186,11 +189,11 @@ export default class UVList extends LitElement {
       this.views.splice(viewIndex, 1);
       view.item = null;
       this.unusedViews.push(view);
-      if (position === -1) {
-        const size = this.itemsMap.get(item).size;
-        // this.scrollerPadding += size;
-        // this.scrollerSize -= size;
-      }
+      // if (position === -1) {
+      // const size = this.itemsMap.get(item).size;
+      // this.scrollerPadding += size;
+      // this.scrollerSize -= size;
+      // }
       return view;
     }
     return null;
@@ -206,7 +209,7 @@ export default class UVList extends LitElement {
       this.views.push(unusedView);
     } else {
       this.views.unshift(unusedView);
-      const size = this.itemsMap.get(item).size;
+      // const size = this.itemsMap.get(item).size;
       // this.scrollerPadding -= size;
       // this.scrollerSize += size;
       // await this.updateComplete;
@@ -227,8 +230,8 @@ export default class UVList extends LitElement {
         this.unuseView(item, position);
       }
     }
-    this.views.sort((one, two) => one.item.id - two.item.id)
-    this.scrollerPadding = this.itemsMap.get(this.views[0].item).getStart()
+    this.views.sort((one, two) => one.item.id - two.item.id);
+    this.scrollerPadding = this.itemsMap.get(this.views[0].item).getStart();
     this.requestUpdate();
     // this.renderQueue = this.renderList();
   }
