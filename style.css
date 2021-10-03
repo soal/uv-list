@@ -11,9 +11,3 @@ body {
   height: 100vh;
   color: #2c3e50;
 }
-
-#global-wrapper {
-  height: 300px;
-  padding: 2rem 0;
-  width: 400px;
-}
