@@ -6,8 +6,8 @@ export default class UVListElement extends LitElement {
     view: { type: Object },
     ui: { type: String },
     itemId: { type: [String, Number] },
-    initialSize: { type: Number }
-  }
+    initialSize: { type: Number },
+  };
 
   static styles = css`
     .uv-list__element {
@@ -16,15 +16,29 @@ export default class UVListElement extends LitElement {
     }
   `;
 
+  constructor() {
+    super();
+    this.resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        this.dispatchResize(entry.contentRect.height)
+      }
+    });
+    this.rootRef = createRef();
+  }
+
+  firstUpdated() {
+    // this.resizeObserver.observe(this.rootRef.value);
+  }
+
   updated() {
-    this.dispatchRendered(
-      this.renderRoot.firstElementChild.getBoundingClientRect().height
+    this.dispatchResize(
+      this.rootRef.value.getBoundingClientRect().height
     );
   }
 
-  dispatchRendered(height) {
+  dispatchResize(height) {
     const item = this.view.item;
-    const event = new CustomEvent("rendered", {
+    const event = new CustomEvent("resize", {
       bubbles: true,
       composed: true,
       detail: {
@@ -46,7 +60,11 @@ export default class UVListElement extends LitElement {
 
   render() {
     return html`
-      <div class="uv-list__element" style="min-height: ${this.initialSize}px;">
+      <div
+        ${ref(this.rootRef)}
+        class="uv-list__element"
+        style="min-height: ${this.initialSize}px;"
+      >
         ${this.view.item.content}
       </div>
     `;
@@ -54,4 +72,4 @@ export default class UVListElement extends LitElement {
 }
 // <slot>${this.item.content}</slot>
 
-customElements.define('uv-list-element', UVListElement);
+customElements.define("uv-list-element", UVListElement);
