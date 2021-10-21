@@ -53,14 +53,14 @@ export default class UVListElement extends LitElement {
     this.dispatchEvent(event);
   }
 
-  // async performUpdate() {
-  //   // Unblock main thread while rendering component
-  //   const promise = new Promise((resolve) =>
-  //     setTimeout(() => resolve())
-  //   );
-  //   await promise;
-  //   return super.performUpdate();
-  // }
+  async performUpdate() {
+    // Unblock main thread while rendering component
+    const promise = new Promise((resolve) =>
+      setTimeout(() => resolve())
+    );
+    await promise;
+    return super.performUpdate();
+  }
 
   render() {
     return html`
@@ -68,7 +68,7 @@ export default class UVListElement extends LitElement {
         ${ref(this.rootRef)}
         class="uv-list__element"
       >
-        ${this.view.item ? this.view.item.content : null}
+        ${this.view.item.content}
       </div>
     `;
   }
