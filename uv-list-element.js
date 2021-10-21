@@ -1,21 +1,13 @@
 import { LitElement, html, css } from "lit";
-import { customElement, property, eventOptions } from "lit/decorators.js";
-import { Ref, ref, createRef } from "lit/directives/ref.js";
-import { UVListView } from "./@types";
+import { ref, createRef } from "lit/directives/ref.js";
 
-@customElement("uv-list-element")
 export default class UVListElement extends LitElement {
-  @property({ type: Object })
-  view: UVListView;
-
-  @property({ type: String })
-  uid: string;
-
-  @property({ type: [Number, String] })
-  itemId: string | number;
-
-  @property({ type: Number })
-  initialSize: number = 0;
+  static properties = {
+    view: { type: Object },
+    ui: { type: String },
+    itemId: { type: [String, Number] },
+    initialSize: { type: Number }
+  }
 
   static styles = css`
     .uv-list__element {
@@ -30,7 +22,7 @@ export default class UVListElement extends LitElement {
     );
   }
 
-  dispatchRendered(height: number) {
+  dispatchRendered(height) {
     const item = this.view.item;
     const event = new CustomEvent("rendered", {
       bubbles: true,
@@ -52,7 +44,7 @@ export default class UVListElement extends LitElement {
   //   return super.performUpdate();
   // }
 
-  protected render() {
+  render() {
     return html`
       <div class="uv-list__element" style="min-height: ${this.initialSize}px;">
         ${this.view.item.content}
@@ -62,8 +54,4 @@ export default class UVListElement extends LitElement {
 }
 // <slot>${this.item.content}</slot>
 
-declare global {
-  interface HTMLElementTagNameMap {
-    "uv-list-element": UVListElement;
-  }
-}
+customElements.define('uv-list-element', UVListElement);
