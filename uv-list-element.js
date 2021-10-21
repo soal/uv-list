@@ -28,13 +28,17 @@ export default class UVListElement extends LitElement {
 
   firstUpdated() {
     // this.resizeObserver.observe(this.rootRef.value);
+    this.resizeObserver.observe(this.renderRoot.firstElementChild);
+    // this.renderRoot.firstElementChild.getBoundingClientRect().height
   }
 
-  updated() {
-    this.dispatchResize(
-      this.rootRef.value.getBoundingClientRect().height
-    );
-  }
+  // updated() {
+  //   this.dispatchResize(
+  //     // this.rootRef.value.getBoundingClientRect().height
+  //     // this.rootRef.value.getBoundingClientRect().height
+  //     this.renderRoot.firstElementChild.getBoundingClientRect().height
+  //   );
+  // }
 
   dispatchResize(height) {
     const item = this.view.item;
@@ -51,7 +55,7 @@ export default class UVListElement extends LitElement {
 
   // async performUpdate() {
   //   // Unblock main thread while rendering component
-  //   const promise: Promise<void> = new Promise((resolve) =>
+  //   const promise = new Promise((resolve) =>
   //     setTimeout(() => resolve())
   //   );
   //   await promise;
@@ -63,9 +67,8 @@ export default class UVListElement extends LitElement {
       <div
         ${ref(this.rootRef)}
         class="uv-list__element"
-        style="min-height: ${this.initialSize}px;"
       >
-        ${this.view.item.content}
+        ${this.view.item ? this.view.item.content : null}
       </div>
     `;
   }

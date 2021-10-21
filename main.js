@@ -10,7 +10,7 @@ class App extends LitElement {
 
   static styles = css`
     #global-wrapper {
-      height: 300px;
+      height: 400px;
       padding: 2rem 0;
       width: 400px;
     }
@@ -18,7 +18,7 @@ class App extends LitElement {
 
   constructor() {
     super();
-    this.items = createMockData(100);
+    this.items = createMockData(1000);
   }
 
   pushItem() {
