@@ -18,7 +18,7 @@ class App extends LitElement {
 
   constructor() {
     super();
-    this.items = createMockData(1000);
+    this.items = createMockData(100);
   }
 
   pushItem() {
@@ -49,6 +49,20 @@ class App extends LitElement {
     ].concat(this.items);
   }
 
+  changeOrder() {
+    // const firstItem = this.items[0]
+    // const secondItem = this.items[1]
+
+    const items = Array.from(this.items);
+    items[0] = this.items[1];
+    items[1] = this.items[0];
+    this.items = items;
+  }
+
+  renderItem(item) {
+    return html`<b>${item.id}:</b> ${item.content}`;
+  }
+
   render() {
     return html`
       <div id="global-wrapper">
@@ -56,7 +70,9 @@ class App extends LitElement {
           .nonBlockingRender="${true}"
           .initialSize="${50}"
           .items="${this.items}"
-        ></uv-list>
+          .renderItem="${this.renderItem}"
+        >
+        </uv-list>
       </div>
     `;
   }
