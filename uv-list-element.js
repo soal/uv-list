@@ -30,12 +30,12 @@ export default class UVListElement extends LitElement {
       // }
       if (!this.view.isUsed) return
       for (let entry of entries) {
-        if (entry.contentRect.height !== this.itemSize) {
+        // if (entry.contentRect.height !== this.itemSize) {
           // console.log('RESIZE EVENT', this.itemId, entry)
           this.itemSize = entry.borderBoxSize[0].blockSize
           this.dispatchResize(this.itemSize);
         }
-      }
+      // }
     });
     this.rootRef = createRef();
     this.renderItem = (item) => item;
@@ -59,17 +59,8 @@ export default class UVListElement extends LitElement {
     this.dispatchEvent(event);
   }
 
-   performUpdate() {
-    if (!this.view.isUsed) return
-    // Unblock main thread while rendering component
-    // const promise = new Promise((resolve) => setTimeout(() => resolve()));
-    // await promise;
-    return super.performUpdate();
-  }
-
   render() {
     // console.log("ELEMENT RENDER", this.view?.item?.id, this.view.isUsed);
-    if (!this.view.isUsed) return null
     return html`
       <div ${ref(this.rootRef)} class="uv-list__element">
         ${this.renderItem(this.view.item, this.index)}

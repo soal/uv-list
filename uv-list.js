@@ -122,8 +122,8 @@ export default class UVList extends LitElement {
       console.dir("WILL UPDATE", this.items[this.items.length - 1]);
       console.dir("WILL UPDATE", this.items[0]);
 
-      this.updateItemsMap();
       requestAnimationFrame(() => {
+        this.updateItemsMap();
         this.updateVisibleItems();
       })
     }
@@ -133,14 +133,14 @@ export default class UVList extends LitElement {
     const newStart =
       this.scrollerRef.value.getBoundingClientRect().top - this.wrapperTop;
 
-    if (Math.abs(this.scrollerStart - newStart) < 10) return;
+    // if (Math.abs(this.scrollerStart - newStart) < 10) return;
 
     this.scrollerStart = newStart;
-    requestAnimationFrame(() => {
+    // requestAnimationFrame(() => {
       this.updateVisibleItems();
-    })
-    this.requestUpdate();
-    this.updating = false;
+      this.requestUpdate();
+    // })
+    // this.updating = false;
   }
 
   updateItemsMap() {
@@ -153,7 +153,7 @@ export default class UVList extends LitElement {
   }
 
   handleElementResize(event) {
-    requestAnimationFrame(() => {
+    // requestAnimationFrame(() => {
       const { item, height } = event.detail;
       if (!item) return;
       const mapItem = this.itemsMap.get(item);
@@ -164,9 +164,9 @@ export default class UVList extends LitElement {
         //   this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
         //   this.listSize;
         mapItem.size = height;
-        mapItem._dirty = true;
       }
-    });
+      mapItem._dirty = true;
+    // });
   }
 
   checkIsItemVisible(item) {
@@ -229,6 +229,7 @@ export default class UVList extends LitElement {
       }
     }
     this.views.sort((one, two) => indexes[one.item.id] - indexes[two.item.id]);
+    console.log(this.views.map(view => [view.item.id, indexes[view.item.id]]))
     this.listSize =
       this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
       this.listSize;
@@ -293,8 +294,8 @@ export default class UVList extends LitElement {
         >
           ${repeat(
             this.views,
-            (view) => view.item.id, // list flickers with keys
-            // (view) => view.uid, // list flickers with keys
+            // (view) => view.item.id, // list flickers with keys
+            (view) => view.uid, // list flickers with keys
             // (view) => this.renderElementToFragment(view)
             this.renderElement
           )}
