@@ -3,10 +3,12 @@ import { ref, createRef } from "lit/directives/ref.js";
 
 export default class UVListElement extends LitElement {
   static properties = {
+    itemId: { type: [Number, String] },
     view: { type: Object },
-    ui: { type: String },
-    itemId: { type: [String, Number] },
+    viewId: { type: [Number, String] },
+    index: { type: Number },
     initialSize: { type: Number },
+    renderItem: { type: Function },
   };
 
   static styles = css`
@@ -19,26 +21,30 @@ export default class UVListElement extends LitElement {
   constructor() {
     super();
     this.resizeObserver = new ResizeObserver((entries) => {
+      // const lastEntry = entries[entries.length - 1];
+      // if (lastEntry.contentRect.height !== this.itemSize) {
+      //   // if (this.view.isUsed) {
+      //     this.itemSize = lastEntry.contentRect.height;
+      //     this.dispatchResize(this.itemSize);
+      //   // }
+      // }
+      if (!this.view.isUsed) return
       for (let entry of entries) {
-        this.dispatchResize(entry.contentRect.height)
+        if (entry.contentRect.height !== this.itemSize) {
+          // console.log('RESIZE EVENT', this.itemId, entry)
+          this.itemSize = entry.borderBoxSize[0].blockSize
+          this.dispatchResize(this.itemSize);
+        }
       }
     });
     this.rootRef = createRef();
+    this.renderItem = (item) => item;
+    this.itemSize = this.initialSize;
   }
 
   firstUpdated() {
-    // this.resizeObserver.observe(this.rootRef.value);
     this.resizeObserver.observe(this.renderRoot.firstElementChild);
-    // this.renderRoot.firstElementChild.getBoundingClientRect().height
   }
-
-  // updated() {
-  //   this.dispatchResize(
-  //     // this.rootRef.value.getBoundingClientRect().height
-  //     // this.rootRef.value.getBoundingClientRect().height
-  //     this.renderRoot.firstElementChild.getBoundingClientRect().height
-  //   );
-  // }
 
   dispatchResize(height) {
     const item = this.view.item;
@@ -53,22 +59,20 @@ export default class UVListElement extends LitElement {
     this.dispatchEvent(event);
   }
 
-  async performUpdate() {
+   performUpdate() {
+    if (!this.view.isUsed) return
     // Unblock main thread while rendering component
-    const promise = new Promise((resolve) =>
-      setTimeout(() => resolve())
-    );
-    await promise;
+    // const promise = new Promise((resolve) => setTimeout(() => resolve()));
+    // await promise;
     return super.performUpdate();
   }
 
   render() {
+    // console.log("ELEMENT RENDER", this.view?.item?.id, this.view.isUsed);
+    if (!this.view.isUsed) return null
     return html`
-      <div
-        ${ref(this.rootRef)}
-        class="uv-list__element"
-      >
-        ${this.view.item.content}
+      <div ${ref(this.rootRef)} class="uv-list__element">
+        ${this.renderItem(this.view.item, this.index)}
       </div>
     `;
   }
