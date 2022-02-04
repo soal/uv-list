@@ -60,7 +60,7 @@ export default class UVListElement extends LitElement {
   }
 
   render() {
-    // console.log("ELEMENT RENDER", this.view?.item?.id, this.view.isUsed);
+    console.log("ELEMENT RENDER", this.view?.item?.id, this.view.isUsed);
     return html`
       <div ${ref(this.rootRef)} class="uv-list__element">
         ${this.renderItem(this.view.item, this.index)}

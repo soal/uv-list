@@ -11,7 +11,13 @@ const createView = (item) => ({
   isUsed: false,
 });
 
-function createSizeRecord(itemsMap, items, intitialSize, index) {
+function createSizeRecord(
+  itemsMap,
+  items,
+  intitialSize,
+  index,
+  firstDirtyRecord
+) {
   const sizeRecord = {
     _dirty: true,
     size: intitialSize,
@@ -19,10 +25,13 @@ function createSizeRecord(itemsMap, items, intitialSize, index) {
     index,
   };
   sizeRecord.getStart = () => {
-    if (sizeRecord._dirty) {
+    if (sizeRecord._dirty || firstDirtyRecord.index <= index) {
       sizeRecord._start =
         index === 0 ? 0 : itemsMap.get(items[index - 1]).getEnd() + 1;
       sizeRecord._dirty = false;
+      if (firstDirtyRecord.index === index) {
+        firstDirtyRecord.index += 1
+      }
     }
     // return index === 0 ? 0 : itemsMap.get(items[index - 1]).getEnd() + 1;
     return sizeRecord._start;
@@ -83,6 +92,7 @@ export default class UVList extends LitElement {
 
     this.renderElement = this.renderElement.bind(this);
     this.scrollerSize = 0;
+    this.firstDirtyRecord = { index: 0 };
   }
 
   firstUpdated() {
@@ -125,47 +135,58 @@ export default class UVList extends LitElement {
       requestAnimationFrame(() => {
         this.updateItemsMap();
         this.updateVisibleItems();
-      })
+      });
     }
   }
 
   handleScroll() {
-    const newStart =
-      this.scrollerRef.value.getBoundingClientRect().top - this.wrapperTop;
+    requestAnimationFrame(() => {
+      const newStart =
+        this.scrollerRef.value.getBoundingClientRect().top - this.wrapperTop;
 
-    // if (Math.abs(this.scrollerStart - newStart) < 10) return;
+      // if (Math.abs(this.scrollerStart - newStart) < 10) return;
 
-    this.scrollerStart = newStart;
-    // requestAnimationFrame(() => {
+      this.scrollerStart = newStart;
+      // requestAnimationFrame(() => {
       this.updateVisibleItems();
       this.requestUpdate();
-    // })
-    // this.updating = false;
+      // })
+      // this.updating = false;
+    });
   }
 
   updateItemsMap() {
     this.items.forEach((item, index) => {
       this.itemsMap.set(
         item,
-        createSizeRecord(this.itemsMap, this.items, this.initialSize, index)
+        createSizeRecord(
+          this.itemsMap,
+          this.items,
+          this.initialSize,
+          index,
+          this.firstDirtyRecord
+        )
       );
     });
   }
 
   handleElementResize(event) {
     // requestAnimationFrame(() => {
-      const { item, height } = event.detail;
-      if (!item) return;
-      const mapItem = this.itemsMap.get(item);
-      if (mapItem.size !== height) {
-        // console.log("RESIZE", item.id, height, mapItem.size);
-        // this.listSize = this.listSize + (height - mapItem.size)
-        // this.listSize =
-        //   this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
-        //   this.listSize;
-        mapItem.size = height;
+    const { item, height } = event.detail;
+    if (!item) return;
+    const mapItem = this.itemsMap.get(item);
+    if (mapItem.size !== height) {
+      if (mapItem.index <= this.firstDirtyRecord.index) {
+        this.firstDirtyRecord.index = mapItem.index;
       }
+      // console.log("RESIZE", item.id, height, mapItem.size);
+      // this.listSize = this.listSize + (height - mapItem.size)
+      this.listSize =
+        this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
+        this.listSize;
+      mapItem.size = height;
       mapItem._dirty = true;
+    }
     // });
   }
 
@@ -174,10 +195,13 @@ export default class UVList extends LitElement {
     if (!getStart || !getEnd) return false;
     const start = getStart();
     const end = getEnd();
-    return (
+    const isVisible =
       end + this.scrollerStart + this.buffer >= 0 &&
-      start + this.scrollerStart <= this.wrapperSize + this.buffer
-    );
+      start + this.scrollerStart <= this.wrapperSize + this.buffer;
+    if (isVisible) {
+      // console.log("IS VISIBLE", item.id, start, end);
+    }
+    return isVisible;
   }
 
   unuseView(item) {
@@ -199,6 +223,7 @@ export default class UVList extends LitElement {
   }
 
   useView(item) {
+    // console.log("USE VIEW", item.id);
     if (this.views.find((view) => view.item.id === item.id)) {
       return;
     }
@@ -209,6 +234,7 @@ export default class UVList extends LitElement {
   }
 
   updateVisibleItems() {
+    // performance.mark("m1");
     // requestAnimationFrame(() => {
     /*
      * Naive non-optimized implementation.
@@ -217,11 +243,19 @@ export default class UVList extends LitElement {
     // cancelAnimationFrame(this.animationFrame)
     // this.animationFrame = requestAnimationFrame(() => {
     // console.log("UPDATE!");
+    // console.log(this.firstDirtyRecord.index)
     const indexes = {};
     for (let i = 0; i < this.items.length; i++) {
       const item = this.items[i];
       indexes[item.id] = i;
+      // performance.mark("v1");
       const visible = this.checkIsItemVisible(item);
+      if (visible) {
+        // console.log("IS VISIBLE", item.id, visible);
+      }
+      // performance.mark("v2");
+      // const m1 = performance.measure('check visibility', 'v1', 'v2')
+      // console.log('CHECK VISIBLE', m1)
       if (visible) {
         this.useView(item);
       } else {
@@ -229,7 +263,9 @@ export default class UVList extends LitElement {
       }
     }
     this.views.sort((one, two) => indexes[one.item.id] - indexes[two.item.id]);
-    console.log(this.views.map(view => [view.item.id, indexes[view.item.id]]))
+    // console.log(
+    //   this.views.map((view) => [view.item.id, indexes[view.item.id]])
+    // );
     this.listSize =
       this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
       this.listSize;
@@ -237,6 +273,9 @@ export default class UVList extends LitElement {
       this.itemsMap.get(this.views[0]?.item ?? null)?.getStart() ??
       this.scrollerPadding;
     this.scrollerSize = this.listSize - this.scrollerPadding;
+    // performance.mark("m2");
+    // const measure = performance.measure("up vis start", "m1", "m2");
+    // console.log(measure);
     // });
   }
 
@@ -294,8 +333,8 @@ export default class UVList extends LitElement {
         >
           ${repeat(
             this.views,
-            // (view) => view.item.id, // list flickers with keys
-            (view) => view.uid, // list flickers with keys
+            (view) => view.item.id, // list flickers with keys
+            // (view) => view.uid, // list flickers with keys
             // (view) => this.renderElementToFragment(view)
             this.renderElement
           )}
@@ -305,7 +344,7 @@ export default class UVList extends LitElement {
   }
 
   // render() {
-  //   // console.log('RENDER', this.renderQueue)
+    // console.log('RENDER', this.renderQueue)
   //   const scrollerSize = this.listSize - this.scrollerPadding;
   //   return html`
   //     <div class="uv-list__wrapper" ${ref(this.wrapperRef)}>
