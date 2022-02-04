@@ -1,5 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { ref, createRef } from "lit/directives/ref.js";
+import { classMap } from "lit/directives/class-map.js";
 
 export default class UVListElement extends LitElement {
   static properties = {
@@ -9,13 +10,21 @@ export default class UVListElement extends LitElement {
     index: { type: Number },
     initialSize: { type: Number },
     renderItem: { type: Function },
+    itemSize: { type: Number },
+    ready: { type: Boolean }
   };
 
   static styles = css`
     .uv-list__element {
       border-bottom: 1px solid #ccc;
       padding: 0.5rem;
-    }
+/*      position: absolute;
+      top: -999999px;
+*/    }
+    .uv-list__element.ready {
+/*      position: static;
+      top: unset;
+*/    }
   `;
 
   constructor() {
@@ -31,10 +40,9 @@ export default class UVListElement extends LitElement {
       if (!this.view.isUsed) return
       for (let entry of entries) {
         // if (entry.contentRect.height !== this.itemSize) {
-          // console.log('RESIZE EVENT', this.itemId, entry)
-          this.itemSize = entry.borderBoxSize[0].blockSize
-          this.dispatchResize(this.itemSize);
-        }
+        this.itemSize = entry.borderBoxSize[0].blockSize;
+        this.dispatchResize(this.itemSize);
+      }
       // }
     });
     this.rootRef = createRef();
@@ -60,9 +68,19 @@ export default class UVListElement extends LitElement {
   }
 
   render() {
-    console.log("ELEMENT RENDER", this.view?.item?.id, this.view.isUsed);
+    // console.log(
+    //   "ELEMENT RENDER",
+    //   this.view?.item?.id,
+    //   this.itemSize,
+    //   this.view.ready
+    // );
+    const classes = {
+      "uv-list__element": true,
+      // ready: this.ready,
+      "ready": true
+    };
     return html`
-      <div ${ref(this.rootRef)} class="uv-list__element">
+      <div ${ref(this.rootRef)} class="${classMap(classes)}">
         ${this.renderItem(this.view.item, this.index)}
       </div>
     `;

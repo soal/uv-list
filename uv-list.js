@@ -1,6 +1,6 @@
-import { LitElement, html, css, render } from "lit";
+import { LitElement, html, css } from "lit";
 import { repeat } from "lit/directives/repeat.js";
-import { asyncAppend } from "lit/directives/async-append.js";
+// import { asyncAppend } from "lit/directives/async-append.js";
 // import { until } from "lit/directives/until.js";
 import { ref, createRef } from "lit/directives/ref.js";
 import "./uv-list-element.js";
@@ -9,6 +9,7 @@ const createView = (item) => ({
   item,
   uid: Math.floor(Math.random() * 10000000),
   isUsed: false,
+  ready: false
 });
 
 function createSizeRecord(
@@ -25,14 +26,14 @@ function createSizeRecord(
     index,
   };
   sizeRecord.getStart = () => {
-    if (sizeRecord._dirty || firstDirtyRecord.index <= index) {
-      sizeRecord._start =
-        index === 0 ? 0 : itemsMap.get(items[index - 1]).getEnd() + 1;
-      sizeRecord._dirty = false;
-      if (firstDirtyRecord.index === index) {
-        firstDirtyRecord.index += 1
-      }
-    }
+    // if (sizeRecord._dirty || firstDirtyRecord.index <= index) {
+    //   sizeRecord._start =
+    //     index === 0 ? 0 : itemsMap.get(items[index - 1]).getEnd() + 1;
+    //   sizeRecord._dirty = false;
+    //   if (firstDirtyRecord.index === index) {
+    //     firstDirtyRecord.index += 1
+    //   }
+    // }
     // return index === 0 ? 0 : itemsMap.get(items[index - 1]).getEnd() + 1;
     return sizeRecord._start;
   };
@@ -56,13 +57,12 @@ export default class UVList extends LitElement {
   static styles = css`
     :host {
       height: 100%;
-      /*      display: flex;
-      flex-direction: column;
-*/
+
     }
     .uv-list__wrapper {
       height: 100%;
       overflow-y: auto;
+      position: relative;
     }
   `;
 
@@ -84,6 +84,9 @@ export default class UVList extends LitElement {
 
     this.views = [];
     this.unusedViews = [];
+    this.preparedViews = [];
+    this.readyViews = [];
+
     this.itemsMap = new WeakMap();
     this.animationFrame = null;
     this.domCache = new Map();
@@ -93,6 +96,7 @@ export default class UVList extends LitElement {
     this.renderElement = this.renderElement.bind(this);
     this.scrollerSize = 0;
     this.firstDirtyRecord = { index: 0 };
+    this.sizes = new Set([]);
   }
 
   firstUpdated() {
@@ -110,20 +114,20 @@ export default class UVList extends LitElement {
     this.scrollerPadding = 0;
     this.scrollerSize = this.listSize - this.scrollerPadding;
     this.unusedViews.push(createView());
-    this.updateItemsMap();
+    this.createItemsMap();
     this.updateVisibleItems();
     this.requestUpdate();
     // this.renderQueue = this.renderList();
   }
 
-  async performUpdate() {
-    if (this.nonBlockingRender) {
-      // Unblock main thread while rendering component
-      const promise = new Promise((resolve) => setTimeout(() => resolve()));
-      await promise;
-    }
-    return super.performUpdate();
-  }
+  // async performUpdate() {
+  //   if (this.nonBlockingRender) {
+  //     // Unblock main thread while rendering component
+  //     const promise = new Promise((resolve) => setTimeout(() => resolve()));
+  //     await promise;
+  //   }
+  //   return super.performUpdate();
+  // }
 
   willUpdate(changedProperties) {
     if (changedProperties.get("items")) {
@@ -133,29 +137,27 @@ export default class UVList extends LitElement {
       console.dir("WILL UPDATE", this.items[0]);
 
       requestAnimationFrame(() => {
-        this.updateItemsMap();
+        this.createItemsMap();
         this.updateVisibleItems();
       });
     }
   }
 
   handleScroll() {
-    requestAnimationFrame(() => {
+    // requestAnimationFrame(() => {
       const newStart =
         this.scrollerRef.value.getBoundingClientRect().top - this.wrapperTop;
 
       // if (Math.abs(this.scrollerStart - newStart) < 10) return;
 
-      this.scrollerStart = newStart;
       // requestAnimationFrame(() => {
+      this.scrollerStart = newStart;
       this.updateVisibleItems();
       this.requestUpdate();
-      // })
-      // this.updating = false;
-    });
+    // });
   }
 
-  updateItemsMap() {
+  createItemsMap() {
     this.items.forEach((item, index) => {
       this.itemsMap.set(
         item,
@@ -168,6 +170,20 @@ export default class UVList extends LitElement {
         )
       );
     });
+  }
+
+  updateItemsMap(index) {
+    for (let i = index; i < this.items.length; i++) {
+      const item = this.items[i];
+      const sizeRecord = this.itemsMap.get(item);
+      if (index === 0) {
+        sizeRecord._start = 0;
+      } else {
+        const prevItem = this.items[i - 1];
+        const prevSizeRecord = this.itemsMap.get(prevItem);
+        sizeRecord._start = prevSizeRecord.getEnd() + 1;
+      }
+    }
   }
 
   handleElementResize(event) {
@@ -184,8 +200,15 @@ export default class UVList extends LitElement {
       this.listSize =
         this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
         this.listSize;
+      // this.scrollerPadding =
+      //   this.itemsMap.get(this.views[0]?.item ?? null)?.getStart() ??
+      //   this.scrollerPadding;
+      // this.scrollerSize = this.listSize - this.scrollerPadding;
       mapItem.size = height;
       mapItem._dirty = true;
+      this.updateItemsMap(mapItem.index);
+      // this.requestUpdate();
+      // this.update();
     }
     // });
   }
@@ -195,13 +218,15 @@ export default class UVList extends LitElement {
     if (!getStart || !getEnd) return false;
     const start = getStart();
     const end = getEnd();
-    const isVisible =
+    const isToShow =
       end + this.scrollerStart + this.buffer >= 0 &&
       start + this.scrollerStart <= this.wrapperSize + this.buffer;
-    if (isVisible) {
-      // console.log("IS VISIBLE", item.id, start, end);
-    }
-    return isVisible;
+
+    const isToPrepare =
+      end + this.scrollerStart + this.buffer + 200 >= 0 &&
+      start + this.scrollerStart <= this.wrapperSize + this.buffer + 200;
+
+    return { isToShow, isToPrepare };
   }
 
   unuseView(item) {
@@ -217,6 +242,7 @@ export default class UVList extends LitElement {
       this.views.splice(viewIndex, 1);
       this.unusedViews.push(view);
       view.isUsed = false;
+      view.ready = false
       return view;
     }
     return null;
@@ -224,13 +250,19 @@ export default class UVList extends LitElement {
 
   useView(item) {
     // console.log("USE VIEW", item.id);
-    if (this.views.find((view) => view.item.id === item.id)) {
+    if (this.views.find((view) => view.item.id === item.id && view.ready)) {
       return;
     }
     const unusedView = this.unusedViews.pop() ?? createView();
     unusedView.item = item;
-    unusedView.isUsed = true;
+    unusedView.ready = true
+    unusedView.isUsed = true
     this.views.push(unusedView);
+  }
+
+  prepareView(item) {
+    // preparing view to check their size and add already correctly sized elements
+    // elements must be rendered with position: absolute
   }
 
   updateVisibleItems() {
@@ -244,19 +276,17 @@ export default class UVList extends LitElement {
     // this.animationFrame = requestAnimationFrame(() => {
     // console.log("UPDATE!");
     // console.log(this.firstDirtyRecord.index)
+
     const indexes = {};
     for (let i = 0; i < this.items.length; i++) {
       const item = this.items[i];
       indexes[item.id] = i;
       // performance.mark("v1");
-      const visible = this.checkIsItemVisible(item);
-      if (visible) {
-        // console.log("IS VISIBLE", item.id, visible);
-      }
+      const { isToShow } = this.checkIsItemVisible(item);
       // performance.mark("v2");
       // const m1 = performance.measure('check visibility', 'v1', 'v2')
       // console.log('CHECK VISIBLE', m1)
-      if (visible) {
+      if (isToShow) {
         this.useView(item);
       } else {
         this.unuseView(item);
@@ -266,9 +296,9 @@ export default class UVList extends LitElement {
     // console.log(
     //   this.views.map((view) => [view.item.id, indexes[view.item.id]])
     // );
-    this.listSize =
-      this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
-      this.listSize;
+    // this.listSize =
+    //   this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
+    //   this.listSize;
     this.scrollerPadding =
       this.itemsMap.get(this.views[0]?.item ?? null)?.getStart() ??
       this.scrollerPadding;
@@ -296,7 +326,9 @@ export default class UVList extends LitElement {
         .viewId="${view.uid}"
         .itemId="${view.item.id}"
         .initialSize="${this.initialSize}"
+        .size="${mapItem.size}"
         .index="${index}"
+        .ready="${view.ready}"
         .renderItem="${this.renderItem}"
       >
       </uv-list-element>
@@ -344,7 +376,7 @@ export default class UVList extends LitElement {
   }
 
   // render() {
-    // console.log('RENDER', this.renderQueue)
+  // console.log('RENDER', this.renderQueue)
   //   const scrollerSize = this.listSize - this.scrollerPadding;
   //   return html`
   //     <div class="uv-list__wrapper" ${ref(this.wrapperRef)}>
