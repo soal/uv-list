@@ -50,9 +50,6 @@ class App extends LitElement {
   }
 
   changeOrder() {
-    // const firstItem = this.items[0]
-    // const secondItem = this.items[1]
-
     const items = Array.from(this.items);
     items[0] = this.items[1];
     items[1] = this.items[0];

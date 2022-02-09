@@ -142,19 +142,26 @@ export default class UVList extends LitElement {
 
   willUpdate(changedProperties) {
     if (changedProperties.get("items")) {
-      this.listSize = this.items.length * this.initialSize;
-
       console.dir("WILL UPDATE", this.items[this.items.length - 1]);
       console.dir("WILL UPDATE", this.items[0]);
 
-      requestAnimationFrame(() => {
         this.createItemsMap();
         this.updateVisibleItems();
-      });
+        this.prepareViews();
+        this.views = [
+          ...this.preparedViews.before,
+          ...this.readyViews,
+          ...this.preparedViews.after,
+        ];
+        this.listSize =
+          this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
+          this.listSize;
+        this.oldScrollerPadding = this.scrollerPadding;
+        this.scrollerPadding =
+          this.itemsMap.get(this.readyViews[0]?.item ?? null)?.getStart() ??
+          this.scrollerPadding;
+        this.scrollerSize = this.listSize - this.scrollerPadding;
     }
-    // if (changedProperties.get("readyViews")) {
-    //   // this.prepareViews();
-    // }
   }
 
   handleScroll() {
@@ -176,7 +183,7 @@ export default class UVList extends LitElement {
     this.listSize =
       this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
       this.listSize;
-    this.oldScrollerPadding = this.scrollerPadding
+    this.oldScrollerPadding = this.scrollerPadding;
     this.scrollerPadding =
       this.itemsMap.get(this.readyViews[0]?.item ?? null)?.getStart() ??
       this.scrollerPadding;
@@ -214,7 +221,7 @@ export default class UVList extends LitElement {
     }
   }
 
-  handleElementResize(event) {
+  async handleElementResize(event) {
     // requestAnimationFrame(() => {
     const { item, height } = event.detail;
     if (!item) return;
@@ -230,16 +237,17 @@ export default class UVList extends LitElement {
       // this.listSize =
       //   this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
       //   this.listSize;
-      this.oldScrollerPadding = this.scrollerPadding
+      this.oldScrollerPadding = this.scrollerPadding;
       this.scrollerPadding =
         this.itemsMap.get(this.readyViews[0]?.item ?? null)?.getStart() ??
         this.scrollerPadding;
-      // this.wrapperRef.value.scrollTop = this.scrollerPadding
 
       // this.scrollerSize = this.listSize - this.scrollerPadding;
-      this.wrapperRef.value.scrollTop += this.scrollerPadding - this.oldScrollerPadding
-      this.requestUpdate();
-      // this.update();
+      await this.updateComplete;
+      this.wrapperRef.value.scrollTop +=
+        this.scrollerPadding - this.oldScrollerPadding;
+      // this.requestUpdate();
+      this.update();
       // this.performUpdate()
     }
     // });
@@ -450,7 +458,7 @@ export default class UVList extends LitElement {
   // }
 
   render() {
-    // const scrollerSize = this.listSize - this.scrollerPadding;
+    console.log("RENDER");
     return html`
       <div class="uv-list__wrapper" ${ref(this.wrapperRef)}>
         <div
@@ -463,8 +471,8 @@ export default class UVList extends LitElement {
         >
           ${repeat(
             this.views,
-            // (view) => view.item.id, // list flickers with keys
-            (view) => view.uid, // list flickers with keys
+            // (view) => view.item.id,
+            (view) => view.uid,
             // (view) => this.renderElementToFragment(view)
             this.renderElement
           )}
