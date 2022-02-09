@@ -67,6 +67,21 @@ export default class UVListElement extends LitElement {
     this.dispatchEvent(event);
   }
 
+  updated() {
+    if (this.isUsed && (this.itemSize === undefined || this.itemSize === this.initialSize)) {
+      console.log(this.rootRef?.getBoundingClientRect().height)
+      this.itemSize = this.rootRef?.getBoundingClientRect().height
+    }
+    this.dispatchEvent(new CustomEvent("update", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        item: this.view.item,
+        height: this.itemSize
+      }
+    }))
+  }
+
   render() {
     // console.log(
     //   "ELEMENT RENDER",

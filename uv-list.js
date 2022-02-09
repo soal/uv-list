@@ -52,6 +52,8 @@ export default class UVList extends LitElement {
   };
   scrollerStart = 0;
   scrollTimeout = null;
+  scrollerPadding = 0;
+  oldScrollerPadding = 0;
   views = [];
   readyViews = [];
   preparedViews = { before: [], after: [] };
@@ -174,6 +176,7 @@ export default class UVList extends LitElement {
     this.listSize =
       this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
       this.listSize;
+    this.oldScrollerPadding = this.scrollerPadding
     this.scrollerPadding =
       this.itemsMap.get(this.readyViews[0]?.item ?? null)?.getStart() ??
       this.scrollerPadding;
@@ -217,26 +220,55 @@ export default class UVList extends LitElement {
     if (!item) return;
     const mapItem = this.itemsMap.get(item);
     if (mapItem.size !== height) {
-      if (mapItem.index <= this.firstDirtyRecord.index) {
-        this.firstDirtyRecord.index = mapItem.index;
-      }
+      // if (mapItem.index <= this.firstDirtyRecord.index) {
+      //   this.firstDirtyRecord.index = mapItem.index;
+      // }
       // console.log("RESIZE", item.id, height, mapItem.size);
-      // this.listSize = this.listSize + (height - mapItem.size)
-      this.listSize =
-        this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
-        this.listSize;
-      // this.scrollerPadding =
-      //   this.itemsMap.get(this.views[0]?.item ?? null)?.getStart() ??
-      //   this.scrollerPadding;
-      // this.scrollerSize = this.listSize - this.scrollerPadding;
       mapItem.size = height;
       mapItem._dirty = true;
       this.updateItemsMap(mapItem.index);
-      // this.requestUpdate();
+      // this.listSize =
+      //   this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
+      //   this.listSize;
+      this.oldScrollerPadding = this.scrollerPadding
+      this.scrollerPadding =
+        this.itemsMap.get(this.readyViews[0]?.item ?? null)?.getStart() ??
+        this.scrollerPadding;
+      // this.wrapperRef.value.scrollTop = this.scrollerPadding
+
+      // this.scrollerSize = this.listSize - this.scrollerPadding;
+      this.wrapperRef.value.scrollTop += this.scrollerPadding - this.oldScrollerPadding
+      this.requestUpdate();
       // this.update();
+      // this.performUpdate()
     }
     // });
   }
+
+  // handleItemRender(event) {
+  //   const { item, height } = event.detail;
+  //   console.log(item.id, height);
+  //   if (!item || height === undefined) return;
+  //   const mapItem = this.itemsMap.get(item);
+  //   // if (mapItem.index <= this.firstDirtyRecord.index) {
+  //   // if (mapItem.size !== height) {
+  //   //   this.firstDirtyRecord.index = mapItem.index;
+  //   // }
+  //   // console.log("RESIZE", item.id, height, mapItem.size);
+  //   const oldSize = mapItem.size;
+  //   mapItem.size = height;
+  //   mapItem._dirty = true;
+  //   this.updateItemsMap(mapItem.index);
+  //   this.listSize = this.listSize + (height - oldSize);
+  //   this.scrollerPadding = this.scrollerPadding + (height - oldSize);
+  //     // this.itemsMap.get(this.readyViews[0]?.item ?? null)?.getStart() ??
+  //     // this.scrollerPadding;
+  //   this.scrollerSize = this.listSize - this.scrollerPadding;
+  //   // this.requestUpdate();
+  //   // this.update();
+  //   // this.performUpdate()
+  //   // }
+  // }
 
   checkIsItemVisible(item) {
     const { getStart, getEnd } = this.itemsMap.get(item) ?? {};
@@ -300,10 +332,13 @@ export default class UVList extends LitElement {
     const last = this.readyViews[this.readyViews.length - 1];
     const firstIndex = this.itemsMap.get(first.item)?.index;
     const lastIndex = this.itemsMap.get(last.item)?.index;
-    const beforeItems = this.items.slice(firstIndex < 5 ? 0 : firstIndex - 5, firstIndex);
+    const beforeItems = this.items.slice(
+      firstIndex < 5 ? 0 : firstIndex - 5,
+      firstIndex
+    );
     const afterItems = this.items.slice(lastIndex + 1, lastIndex + 6);
-    console.log(firstIndex, lastIndex);
-    console.log(beforeItems, afterItems)
+    // console.log(firstIndex, lastIndex);
+    // console.log(beforeItems, afterItems)
 
     if (beforeItems?.length) {
       beforeItems.forEach((item) => {
@@ -424,11 +459,12 @@ export default class UVList extends LitElement {
           style="height: ${this.scrollerSize}px; padding-top: ${this
             .scrollerPadding}px"
           @resize="${this.handleElementResize}"
+          @update="${this.handleItemRender}"
         >
           ${repeat(
             this.views,
-            (view) => view.item.id, // list flickers with keys
-            // (view) => view.uid, // list flickers with keys
+            // (view) => view.item.id, // list flickers with keys
+            (view) => view.uid, // list flickers with keys
             // (view) => this.renderElementToFragment(view)
             this.renderElement
           )}
