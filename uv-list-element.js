@@ -18,13 +18,13 @@ export default class UVListElement extends LitElement {
     .uv-list__element {
       border-bottom: 1px solid #ccc;
       padding: 0.5rem;
-/*      position: absolute;
+      position: absolute;
       top: -999999px;
-*/    }
+    }
     .uv-list__element.ready {
-/*      position: static;
+      position: static;
       top: unset;
-*/    }
+    }
   `;
 
   constructor() {
@@ -76,8 +76,7 @@ export default class UVListElement extends LitElement {
     // );
     const classes = {
       "uv-list__element": true,
-      // ready: this.ready,
-      "ready": true
+      ready: this.ready,
     };
     return html`
       <div ${ref(this.rootRef)} class="${classMap(classes)}">

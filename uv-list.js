@@ -9,7 +9,7 @@ const createView = (item) => ({
   item,
   uid: Math.floor(Math.random() * 10000000),
   isUsed: false,
-  ready: false
+  ready: false,
 });
 
 function createSizeRecord(
@@ -52,17 +52,20 @@ export default class UVList extends LitElement {
   };
   scrollerStart = 0;
   scrollTimeout = null;
-  updating = false;
+  views = [];
+  readyViews = [];
+  preparedViews = { before: [], after: [] };
+  unusedViews = [];
 
   static styles = css`
     :host {
       height: 100%;
-
     }
     .uv-list__wrapper {
       height: 100%;
       overflow-y: auto;
       position: relative;
+      border: 1px solid black;
     }
   `;
 
@@ -82,15 +85,15 @@ export default class UVList extends LitElement {
 
     this.wrapperBottom = 0;
 
-    this.views = [];
-    this.unusedViews = [];
-    this.preparedViews = [];
-    this.readyViews = [];
+    // this.views = [];
+    // this.unusedViews = [];
+    // this.preparedViews = [];
+    // this.readyViews = [];
 
     this.itemsMap = new WeakMap();
     this.animationFrame = null;
-    this.domCache = new Map();
-    this.domCacheMaxSize = 50;
+    // this.domCache = new Map();
+    // this.domCacheMaxSize = 50;
     this.initialSize = 50;
 
     this.renderElement = this.renderElement.bind(this);
@@ -116,8 +119,14 @@ export default class UVList extends LitElement {
     this.unusedViews.push(createView());
     this.createItemsMap();
     this.updateVisibleItems();
-    this.requestUpdate();
+    this.prepareViews();
     // this.renderQueue = this.renderList();
+    this.views = [
+      ...this.preparedViews.before,
+      ...this.readyViews,
+      ...this.preparedViews.after,
+    ];
+    this.requestUpdate();
   }
 
   // async performUpdate() {
@@ -141,19 +150,35 @@ export default class UVList extends LitElement {
         this.updateVisibleItems();
       });
     }
+    // if (changedProperties.get("readyViews")) {
+    //   // this.prepareViews();
+    // }
   }
 
   handleScroll() {
     // requestAnimationFrame(() => {
-      const newStart =
-        this.scrollerRef.value.getBoundingClientRect().top - this.wrapperTop;
+    const newStart =
+      this.scrollerRef.value.getBoundingClientRect().top - this.wrapperTop;
 
-      // if (Math.abs(this.scrollerStart - newStart) < 10) return;
+    // if (Math.abs(this.scrollerStart - newStart) < 10) return;
 
-      // requestAnimationFrame(() => {
-      this.scrollerStart = newStart;
-      this.updateVisibleItems();
-      this.requestUpdate();
+    // requestAnimationFrame(() => {
+    this.scrollerStart = newStart;
+    this.updateVisibleItems();
+    this.prepareViews();
+    this.views = [
+      ...this.preparedViews.before,
+      ...this.readyViews,
+      ...this.preparedViews.after,
+    ];
+    this.listSize =
+      this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
+      this.listSize;
+    this.scrollerPadding =
+      this.itemsMap.get(this.readyViews[0]?.item ?? null)?.getStart() ??
+      this.scrollerPadding;
+    this.scrollerSize = this.listSize - this.scrollerPadding;
+    this.requestUpdate();
     // });
   }
 
@@ -218,20 +243,15 @@ export default class UVList extends LitElement {
     if (!getStart || !getEnd) return false;
     const start = getStart();
     const end = getEnd();
-    const isToShow =
+    return (
       end + this.scrollerStart + this.buffer >= 0 &&
-      start + this.scrollerStart <= this.wrapperSize + this.buffer;
-
-    const isToPrepare =
-      end + this.scrollerStart + this.buffer + 200 >= 0 &&
-      start + this.scrollerStart <= this.wrapperSize + this.buffer + 200;
-
-    return { isToShow, isToPrepare };
+      start + this.scrollerStart <= this.wrapperSize + this.buffer
+    );
   }
 
   unuseView(item) {
     let viewIndex = null;
-    const view = this.views.find((view, index) => {
+    const view = this.readyViews.find((view, index) => {
       if (view.item.id === item.id) {
         viewIndex = index;
         return true;
@@ -239,10 +259,10 @@ export default class UVList extends LitElement {
     });
 
     if (view) {
-      this.views.splice(viewIndex, 1);
+      this.readyViews.splice(viewIndex, 1);
       this.unusedViews.push(view);
       view.isUsed = false;
-      view.ready = false
+      view.ready = false;
       return view;
     }
     return null;
@@ -250,19 +270,59 @@ export default class UVList extends LitElement {
 
   useView(item) {
     // console.log("USE VIEW", item.id);
-    if (this.views.find((view) => view.item.id === item.id && view.ready)) {
+    if (
+      this.readyViews.find((view) => view.item.id === item.id && view.ready)
+    ) {
       return;
     }
-    const unusedView = this.unusedViews.pop() ?? createView();
-    unusedView.item = item;
-    unusedView.ready = true
-    unusedView.isUsed = true
-    this.views.push(unusedView);
+    let view;
+    let preparedView = [
+      ...this.preparedViews.before,
+      ...this.preparedViews.after,
+    ].find((v) => v.item.id === item.id);
+    if (preparedView) {
+      view = preparedView;
+    } else {
+      view = this.unusedViews.pop() ?? createView();
+    }
+    view.item = item;
+    view.ready = true;
+    view.isUsed = true;
+    this.readyViews.push(view);
   }
 
-  prepareView(item) {
+  prepareViews() {
     // preparing view to check their size and add already correctly sized elements
     // elements must be rendered with position: absolute
+    this.preparedViews.before = [];
+    this.preparedViews.after = [];
+    const first = this.readyViews[0];
+    const last = this.readyViews[this.readyViews.length - 1];
+    const firstIndex = this.itemsMap.get(first.item)?.index;
+    const lastIndex = this.itemsMap.get(last.item)?.index;
+    const beforeItems = this.items.slice(firstIndex < 5 ? 0 : firstIndex - 5, firstIndex);
+    const afterItems = this.items.slice(lastIndex + 1, lastIndex + 6);
+    console.log(firstIndex, lastIndex);
+    console.log(beforeItems, afterItems)
+
+    if (beforeItems?.length) {
+      beforeItems.forEach((item) => {
+        const unusedView = this.unusedViews.pop() ?? createView();
+        unusedView.item = item;
+        unusedView.ready = false;
+        unusedView.isUsed = true;
+        this.preparedViews.before.push(unusedView);
+      });
+    }
+    if (afterItems?.length) {
+      afterItems.forEach((item) => {
+        const unusedView = this.unusedViews.pop() ?? createView();
+        unusedView.item = item;
+        unusedView.ready = false;
+        unusedView.isUsed = true;
+        this.preparedViews.after.push(unusedView);
+      });
+    }
   }
 
   updateVisibleItems() {
@@ -282,25 +342,27 @@ export default class UVList extends LitElement {
       const item = this.items[i];
       indexes[item.id] = i;
       // performance.mark("v1");
-      const { isToShow } = this.checkIsItemVisible(item);
+      const visible = this.checkIsItemVisible(item);
       // performance.mark("v2");
       // const m1 = performance.measure('check visibility', 'v1', 'v2')
       // console.log('CHECK VISIBLE', m1)
-      if (isToShow) {
+      if (visible) {
         this.useView(item);
       } else {
         this.unuseView(item);
       }
     }
-    this.views.sort((one, two) => indexes[one.item.id] - indexes[two.item.id]);
+    this.readyViews.sort(
+      (one, two) => indexes[one.item.id] - indexes[two.item.id]
+    );
     // console.log(
     //   this.views.map((view) => [view.item.id, indexes[view.item.id]])
     // );
-    // this.listSize =
+    // this.listSize =3573
     //   this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
     //   this.listSize;
     this.scrollerPadding =
-      this.itemsMap.get(this.views[0]?.item ?? null)?.getStart() ??
+      this.itemsMap.get(this.readyViews[0]?.item ?? null)?.getStart() ??
       this.scrollerPadding;
     this.scrollerSize = this.listSize - this.scrollerPadding;
     // performance.mark("m2");
