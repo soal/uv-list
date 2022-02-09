@@ -18,7 +18,7 @@ class App extends LitElement {
 
   constructor() {
     super();
-    this.items = createMockData(1000);
+    this.items = createMockData(100000);
   }
 
   pushItem() {
