@@ -3,6 +3,7 @@ import { repeat } from "lit/directives/repeat.js";
 // import { asyncAppend } from "lit/directives/async-append.js";
 // import { until } from "lit/directives/until.js";
 import { ref, createRef } from "lit/directives/ref.js";
+import binarySearch from "./binarySearch.js";
 import "./uv-list-element.js";
 
 const createView = (item) => ({
@@ -10,14 +11,10 @@ const createView = (item) => ({
   uid: Math.floor(Math.random() * 10000000),
   isUsed: false,
   ready: false,
+  position: 0,
 });
 
-function createSizeRecord(
-  itemsMap,
-  items,
-  intitialSize,
-  index
-) {
+function createSizeRecord(itemsMap, items, intitialSize, index) {
   const sizeRecord = {
     size: intitialSize,
     _start: index === 0 ? 0 : itemsMap.get(items[index - 1]).getEnd() + 1,
@@ -72,7 +69,8 @@ export default class UVList extends LitElement {
 
     this.wrapperBottom = 0;
 
-    this.itemsMap = new WeakMap();
+    // this.itemsMap = new WeakMap();
+    this.itemsMap = new Map();
     this.animationFrame = null;
     // this.domCache = new Map();
     // this.domCacheMaxSize = 50;
@@ -146,7 +144,6 @@ export default class UVList extends LitElement {
     const newStart =
       this.scrollerRef.value.getBoundingClientRect().top - this.wrapperTop;
 
-
     this.scrollerStart = newStart;
     this.updateVisibleItems();
     this.prepareViews();
@@ -190,6 +187,7 @@ export default class UVList extends LitElement {
       } else {
         const prevItem = this.items[i - 1];
         const prevSizeRecord = this.itemsMap.get(prevItem);
+        // const prevSizeRecordEnd = prevSizeRecord.getEnd() + 1
         sizeRecord._start = prevSizeRecord.getEnd() + 1;
       }
     }
@@ -215,37 +213,26 @@ export default class UVList extends LitElement {
     }
   }
 
-  checkIsItemVisible(item) {
-    const { getStart, getEnd } = this.itemsMap.get(item) ?? {};
-    if (!getStart || !getEnd) return false;
-    const start = getStart();
-    const end = getEnd();
-    return (
-      end + this.scrollerStart + this.buffer >= 0 &&
-      start + this.scrollerStart <= this.wrapperSize + this.buffer
-    );
+  unuseView(view, index) {
+    // let viewIndex = null;
+    // const view = this.readyViews.find((view, index) => {
+    //   if (view.item.id === item.id) {
+    //     viewIndex = index;
+    //     return true;
+    //   }
+    // });
+
+    // if (view) {
+    view.isUsed = false;
+    view.ready = false;
+    this.unusedViews.push(view);
+    this.readyViews.splice(index, 1);
+    return view;
+    // }
+    // return null;
   }
 
-  unuseView(item) {
-    let viewIndex = null;
-    const view = this.readyViews.find((view, index) => {
-      if (view.item.id === item.id) {
-        viewIndex = index;
-        return true;
-      }
-    });
-
-    if (view) {
-      this.readyViews.splice(viewIndex, 1);
-      this.unusedViews.push(view);
-      view.isUsed = false;
-      view.ready = false;
-      return view;
-    }
-    return null;
-  }
-
-  useView(item) {
+  useView(item, index) {
     if (
       this.readyViews.find((view) => view.item.id === item.id && view.ready)
     ) {
@@ -262,6 +249,7 @@ export default class UVList extends LitElement {
       view = this.unusedViews.pop() ?? createView();
     }
     view.item = item;
+    view.item.index = index;
     view.ready = true;
     view.isUsed = true;
     this.readyViews.push(view);
@@ -303,24 +291,38 @@ export default class UVList extends LitElement {
   }
 
   updateVisibleItems() {
-    /*
-     * Naive non-optimized implementation.
-     * Always calculate visibility for all items.
-     */
-    const indexes = {};
-    for (let i = 0; i < this.items.length; i++) {
-      const item = this.items[i];
-      indexes[item.id] = i;
-      const visible = this.checkIsItemVisible(item);
-      if (visible) {
-        this.useView(item);
-      } else {
-        this.unuseView(item);
+    const firstVisible = () => {
+      const found = binarySearch(this.items, (item) => {
+        const { getEnd } = this.itemsMap.get(item) ?? {};
+        return 0 <= getEnd() + this.buffer + this.scrollerStart;
+      });
+      return found === this.items.length ? 0 : found;
+    };
+
+    const lastVisible = () => {
+      const found = binarySearch(this.items, (item) => {
+        const { getStart } = this.itemsMap.get(item) ?? {};
+        const start = getStart();
+
+        return 0 < start + this.scrollerStart - this.wrapperSize + this.buffer;
+      });
+      return found;
+    };
+
+    const first = firstVisible();
+    const last = lastVisible();
+
+    if (first === 0 && last === this.items.length) return;
+    this.readyViews.forEach((view, viewIndex) => {
+      if (view.item.index < first || view.item.index > last) {
+        this.unuseView(view, viewIndex);
       }
-    }
-    this.readyViews.sort(
-      (one, two) => indexes[one.item.id] - indexes[two.item.id]
-    );
+    });
+    const visibleItems = this.items.slice(first, last);
+    visibleItems.forEach((item, index) => {
+      this.useView(item, index + first);
+    });
+    this.readyViews.sort((one, two) => one.item.index - two.item.index);
     this.scrollerPadding =
       this.itemsMap.get(this.readyViews[0]?.item ?? null)?.getStart() ??
       this.scrollerPadding;
@@ -348,6 +350,7 @@ export default class UVList extends LitElement {
         .index="${index}"
         .ready="${view.ready}"
         .renderItem="${this.renderItem}"
+        .start="${mapItem.getStart()}"
       >
       </uv-list-element>
     `;
@@ -382,6 +385,7 @@ export default class UVList extends LitElement {
         >
           ${repeat(
             this.views,
+            // this.readyViews,
             // (view) => view.item.id,
             (view) => view.uid,
             // (view) => this.renderElementToFragment(view)

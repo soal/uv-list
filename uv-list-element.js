@@ -11,18 +11,20 @@ export default class UVListElement extends LitElement {
     initialSize: { type: Number },
     renderItem: { type: Function },
     itemSize: { type: Number },
-    ready: { type: Boolean }
+    ready: { type: Boolean },
+    start: { type: Number },
   };
 
   static styles = css`
     .uv-list__element {
       border-bottom: 1px solid #ccc;
+      box-sizing: border-box;
       padding: 0.5rem;
       position: absolute;
       top: -999999px;
     }
     .uv-list__element.ready {
-      position: static;
+      /*position: static;*/
       top: unset;
     }
   `;
@@ -37,7 +39,7 @@ export default class UVListElement extends LitElement {
       //     this.dispatchResize(this.itemSize);
       //   // }
       // }
-      if (!this.view.isUsed) return
+      if (!this.view.isUsed) return;
       for (let entry of entries) {
         // if (entry.contentRect.height !== this.itemSize) {
         this.itemSize = entry.borderBoxSize[0].blockSize;
@@ -78,8 +80,9 @@ export default class UVListElement extends LitElement {
       "uv-list__element": true,
       ready: this.ready,
     };
+    const style = `top: ${this.start}px`;
     return html`
-      <div ${ref(this.rootRef)} class="${classMap(classes)}">
+      <div ${ref(this.rootRef)} class="${classMap(classes)}" style="${style}">
         ${this.renderItem(this.view.item, this.index)}
       </div>
     `;
