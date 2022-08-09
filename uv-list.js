@@ -32,6 +32,7 @@ export default class UVList extends LitElement {
     buffer: { type: Number },
     nonBlockingRender: { type: Boolean },
     renderItem: { type: Function },
+    selectedId: { type: Number }
   };
   scrollerStart = 0;
   scrollTimeout = null;
@@ -305,14 +306,13 @@ export default class UVList extends LitElement {
 
       return 0 < start + this.scrollerStart - this.wrapperSize + this.buffer;
     });
-    return found;
+    return found + 1;
   }
 
   updateVisibleItems() {
     const first = this.firstVisible();
     const last = this.lastVisible();
 
-    if (first === 0 && last === this.items.length) return;
     this.readyViews.forEach((view, viewIndex) => {
       if (view.item.index < first || view.item.index > last) {
         this.unuseView(view, viewIndex);
@@ -337,6 +337,13 @@ export default class UVList extends LitElement {
     }
   }
 
+  onElementSelected(event) {
+    console.log("IN LIST")
+    this.dispatchEvent(new Event("selected", {
+      detail: event.detail
+    }))
+  }
+
   renderElement(view) {
     const mapItem = this.itemsMap.get(view.item);
     const index = mapItem?.index ?? null;
@@ -351,6 +358,7 @@ export default class UVList extends LitElement {
         .ready="${view.ready}"
         .renderItem="${this.renderItem}"
         .start="${mapItem.getStart()}"
+        .selectedId="${this.selectedId}"
       >
       </uv-list-element>
     `;

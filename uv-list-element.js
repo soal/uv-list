@@ -13,6 +13,7 @@ export default class UVListElement extends LitElement {
     itemSize: { type: Number },
     ready: { type: Boolean },
     start: { type: Number },
+    selectedId: { type: Number }
   };
 
   static styles = css`
@@ -22,10 +23,14 @@ export default class UVListElement extends LitElement {
       padding: 0.5rem;
       position: absolute;
       top: -999999px;
+      width: 100%;
     }
     .uv-list__element.ready {
       /*position: static;*/
       top: unset;
+    }
+    .selected {
+      color: red;
     }
   `;
 
@@ -50,6 +55,14 @@ export default class UVListElement extends LitElement {
     this.rootRef = createRef();
     this.renderItem = (item) => item;
     this.itemSize = this.initialSize;
+
+    this.addEventListener('click', (e) => {
+      this.dispatchEvent(new CustomEvent("selected", {
+        composed: true,
+        bubbles: true,
+        detail: { item: this.view.item }
+      }))
+    });
   }
 
   firstUpdated() {
@@ -69,6 +82,7 @@ export default class UVListElement extends LitElement {
     this.dispatchEvent(event);
   }
 
+
   render() {
     // console.log(
     //   "ELEMENT RENDER",
@@ -79,6 +93,7 @@ export default class UVListElement extends LitElement {
     const classes = {
       "uv-list__element": true,
       ready: this.ready,
+      selected: this.view.item.id === this.selectedId
     };
     const style = `top: ${this.start}px`;
     return html`

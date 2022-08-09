@@ -6,6 +6,7 @@ import { createMockData } from "./mock";
 class App extends LitElement {
   static properties = {
     items: { type: Array },
+    selected: { type: Number }
   };
 
   static styles = css`
@@ -18,7 +19,8 @@ class App extends LitElement {
 
   constructor() {
     super();
-    this.items = createMockData(1000);
+    this.items = createMockData(10000);
+    this.selected = 5
   }
 
   pushItem() {
@@ -56,6 +58,13 @@ class App extends LitElement {
     this.items = items;
   }
 
+  onSelected(event) {
+    if (event.detail.item) {
+      this.selected = event.detail.item.id
+    }
+
+  }
+
   renderItem(item) {
     return html`<b>${item.id}:</b> ${item.content}`;
   }
@@ -68,6 +77,8 @@ class App extends LitElement {
           .initialSize="${50}"
           .items="${this.items}"
           .renderItem="${this.renderItem}"
+          .selectedId="${this.selected}"
+          @selected="${this.onSelected}"
         >
         </uv-list>
       </div>
