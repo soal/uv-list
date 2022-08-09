@@ -290,27 +290,27 @@ export default class UVList extends LitElement {
     }
   }
 
+  firstVisible() {
+    const found = binarySearch(this.items, (item) => {
+      const { getEnd } = this.itemsMap.get(item) ?? {};
+      return 0 <= getEnd() + this.buffer + this.scrollerStart;
+    });
+    return found === this.items.length ? 0 : found;
+  }
+
+  lastVisible() {
+    const found = binarySearch(this.items, (item) => {
+      const { getStart } = this.itemsMap.get(item) ?? {};
+      const start = getStart();
+
+      return 0 < start + this.scrollerStart - this.wrapperSize + this.buffer;
+    });
+    return found;
+  }
+
   updateVisibleItems() {
-    const firstVisible = () => {
-      const found = binarySearch(this.items, (item) => {
-        const { getEnd } = this.itemsMap.get(item) ?? {};
-        return 0 <= getEnd() + this.buffer + this.scrollerStart;
-      });
-      return found === this.items.length ? 0 : found;
-    };
-
-    const lastVisible = () => {
-      const found = binarySearch(this.items, (item) => {
-        const { getStart } = this.itemsMap.get(item) ?? {};
-        const start = getStart();
-
-        return 0 < start + this.scrollerStart - this.wrapperSize + this.buffer;
-      });
-      return found;
-    };
-
-    const first = firstVisible();
-    const last = lastVisible();
+    const first = this.firstVisible();
+    const last = this.lastVisible();
 
     if (first === 0 && last === this.items.length) return;
     this.readyViews.forEach((view, viewIndex) => {
