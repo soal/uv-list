@@ -70,17 +70,21 @@ export default class UVList extends LitElement {
 
     this.wrapperBottom = 0;
 
-    // this.itemsMap = new WeakMap();
-    this.itemsMap = new Map();
-    this.animationFrame = null;
+    this.itemsMap = new WeakMap();
+    // this.animationFrame = null;
     // this.domCache = new Map();
     // this.domCacheMaxSize = 50;
     this.initialSize = 50;
 
     this.renderElement = this.renderElement.bind(this);
     this.scrollerSize = 0;
-    this.firstDirtyRecord = { index: 0 };
-    this.sizes = new Set([]);
+    // this.firstDirtyRecord = { index: 0 };
+    // this.sizes = new Set([]);
+
+    this.resizeObserver = new ResizeObserver((entries) => {
+      this.handleScroll()
+      console.log(entries)
+    })
   }
 
   firstUpdated() {
@@ -106,6 +110,7 @@ export default class UVList extends LitElement {
       ...this.preparedViews.after,
     ];
     this.requestUpdate();
+    this.resizeObserver.observe(this.wrapperRef.value)
   }
 
   async performUpdate() {
@@ -173,7 +178,6 @@ export default class UVList extends LitElement {
           this.items,
           this.initialSize,
           index,
-          this.firstDirtyRecord
         )
       );
     });
