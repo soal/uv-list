@@ -10,10 +10,10 @@ export default class UVListElement extends LitElement {
     index: { type: Number },
     initialSize: { type: Number },
     renderItem: { type: Function },
-    itemSize: { type: Number },
+    // itemSize: { type: Number },
     ready: { type: Boolean },
     start: { type: Number },
-    selectedId: { type: Number }
+    selectedId: { type: Number },
   };
 
   static styles = css`
@@ -22,7 +22,7 @@ export default class UVListElement extends LitElement {
       box-sizing: border-box;
       padding: 0.5rem;
       position: absolute;
-      top: -999999px;
+      top: -99999999px;
       width: 100%;
     }
     .uv-list__element.ready {
@@ -36,38 +36,48 @@ export default class UVListElement extends LitElement {
 
   constructor() {
     super();
-    this.resizeObserver = new ResizeObserver((entries) => {
-      // const lastEntry = entries[entries.length - 1];
-      // if (lastEntry.contentRect.height !== this.itemSize) {
-      //   // if (this.view.isUsed) {
-      //     this.itemSize = lastEntry.contentRect.height;
-      //     this.dispatchResize(this.itemSize);
-      //   // }
-      // }
-      if (!this.view.isUsed) return;
-      for (let entry of entries) {
-        // if (entry.contentRect.height !== this.itemSize) {
-        this.itemSize = entry.borderBoxSize[0].blockSize;
-        this.dispatchResize(this.itemSize);
-      }
+    this.resizeObserver = new ResizeObserver(async (entries) => {
+      // requestAnimationFrame(() => {
+        // const lastEntry = entries[entries.length - 1];
+        // if (lastEntry.contentRect.height !== this.itemSize) {
+        //   // if (this.view.isUsed) {
+        //     this.itemSize = lastEntry.contentRect.height;
+        //     this.dispatchResize(this.itemSize);
+        //   // }
+        // }
+        // if (!this.view.isUsed) return;
+        for (let entry of entries) {
+          // if (entry.contentRect.height !== this.itemSize) {
+          const itemSize = entry.borderBoxSize[0].blockSize;
+          this.dispatchResize(itemSize);
+        }
+      // });
       // }
     });
     this.rootRef = createRef();
     this.renderItem = (item) => item;
-    this.itemSize = this.initialSize;
+    // this.itemSize = this.initialSize;
 
-    this.addEventListener('click', (e) => {
-      this.dispatchEvent(new CustomEvent("selected", {
-        composed: true,
-        bubbles: true,
-        detail: { item: this.view.item }
-      }))
+    this.addEventListener("click", (e) => {
+      this.dispatchEvent(
+        new CustomEvent("selected", {
+          composed: true,
+          bubbles: true,
+          detail: { item: this.view.item },
+        })
+      );
     });
   }
 
   firstUpdated() {
     this.resizeObserver.observe(this.renderRoot.firstElementChild);
   }
+
+  // shouldUpdate(changes) {
+  //   console.log(changes)
+  //   // if (changes.get("ready") === undefined) return false
+  //   return true
+  // }
 
   dispatchResize(height) {
     const item = this.view.item;
@@ -77,11 +87,11 @@ export default class UVListElement extends LitElement {
       detail: {
         item,
         height,
+        index: this.index
       },
     });
     this.dispatchEvent(event);
   }
-
 
   render() {
     // console.log(
@@ -93,7 +103,7 @@ export default class UVListElement extends LitElement {
     const classes = {
       "uv-list__element": true,
       ready: this.ready,
-      selected: this.view.item.id === this.selectedId
+      selected: this.view.item.id === this.selectedId,
     };
     const style = `top: ${this.start}px`;
     return html`

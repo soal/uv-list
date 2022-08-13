@@ -19,7 +19,7 @@ class App extends LitElement {
 
   constructor() {
     super();
-    this.items = createMockData(10000);
+    this.items = createMockData(1000);
     this.selected = 5
   }
 
@@ -76,7 +76,7 @@ class App extends LitElement {
           .nonBlockingRender="${true}"
           .initialSize="${50}"
           .items="${this.items}"
-          .renderItem="${this.renderItem}"
+          .renderItem="${this.renderItem.bind(this)}"
           .selectedId="${this.selected}"
           @selected="${this.onSelected}"
         >
