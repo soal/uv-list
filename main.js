@@ -1,13 +1,15 @@
 import { LitElement, html, css, render } from "lit";
 import "./style.css";
-import "./lib/list.js";
+import "./lib/list/list";
 import "./lib/tree/tree";
 import { createMockData } from "./mock";
+import treeMock from "./tree-mock";
 
 class App extends LitElement {
   static properties = {
     items: { type: Array },
     selected: { type: Number },
+    treeMock: { type: Array }
   };
 
   static styles = css`
@@ -21,6 +23,7 @@ class App extends LitElement {
   constructor() {
     super();
     this.items = createMockData(100000);
+    this.treeMock = treeMock
     this.selected = 5;
   }
 
@@ -66,7 +69,7 @@ class App extends LitElement {
   }
 
   renderItem(item) {
-    return html`<b>${item.id}:</b> ${item.content}`;
+    return html`<b>${item.id}:</b> ${item.name}`;
   }
 
   render() {
@@ -74,8 +77,8 @@ class App extends LitElement {
       <div id="global-wrapper">
         <uv-tree
           .nonBlockingRender="${true}"
-          .initialSize="${50}"
-          .items="${this.items}"
+          .initialSize="${35}"
+          .items="${this.treeMock}"
           .renderItem="${this.renderItem.bind(this)}"
           .selectedId="${this.selected}"
           @selected="${this.onSelected}"

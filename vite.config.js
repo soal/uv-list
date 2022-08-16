@@ -16,6 +16,7 @@ export default defineConfig({
         "lit",
         "lit/directives/ref.js",
         "lit/directives/class-map.js",
+        "lit/directives/style-map.js",
         "lit/directives/repeat.js",
       ],
       output: {
@@ -24,6 +25,7 @@ export default defineConfig({
           "lit/directives/ref.js": "lit/directives/ref.js",
           "lit/directives/repeat.js": "lit/directives/repeat.js",
           "lit/directives/class-map.js": "lit/directives/class-map.js",
+          "lit/directives/style-map.js": "lit/directives/style-map.js",
         },
       },
     },
