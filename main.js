@@ -1,12 +1,13 @@
 import { LitElement, html, css, render } from "lit";
 import "./style.css";
 import "./lib/list.js";
+import "./lib/tree/tree";
 import { createMockData } from "./mock";
 
 class App extends LitElement {
   static properties = {
     items: { type: Array },
-    selected: { type: Number }
+    selected: { type: Number },
   };
 
   static styles = css`
@@ -20,7 +21,7 @@ class App extends LitElement {
   constructor() {
     super();
     this.items = createMockData(100000);
-    this.selected = 5
+    this.selected = 5;
   }
 
   pushItem() {
@@ -60,9 +61,8 @@ class App extends LitElement {
 
   onSelected(event) {
     if (event.detail.item) {
-      this.selected = event.detail.item.id
+      this.selected = event.detail.item.id;
     }
-
   }
 
   renderItem(item) {
@@ -72,7 +72,17 @@ class App extends LitElement {
   render() {
     return html`
       <div id="global-wrapper">
-        <uv-list
+        <uv-tree
+          .nonBlockingRender="${true}"
+          .initialSize="${50}"
+          .items="${this.items}"
+          .renderItem="${this.renderItem.bind(this)}"
+          .selectedId="${this.selected}"
+          @selected="${this.onSelected}"
+        >
+        </uv-tree>
+
+        <!--         <uv-list
           .nonBlockingRender="${true}"
           .initialSize="${50}"
           .items="${this.items}"
@@ -81,6 +91,7 @@ class App extends LitElement {
           @selected="${this.onSelected}"
         >
         </uv-list>
+ -->
       </div>
     `;
   }
