@@ -1,6 +1,6 @@
 import { LitElement, html, css, render } from "lit";
 import "./style.css";
-import "./uv-list.js";
+import "./lib/list.js";
 import { createMockData } from "./mock";
 
 class App extends LitElement {
@@ -19,7 +19,7 @@ class App extends LitElement {
 
   constructor() {
     super();
-    this.items = createMockData(1000);
+    this.items = createMockData(100000);
     this.selected = 5
   }
 
