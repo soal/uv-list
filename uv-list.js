@@ -7,7 +7,7 @@ import binarySearch from "./binarySearch.js";
 import "./uv-list-element.js";
 
 const createView = (item) => {
-  console.count("CREATE VIEW")
+  // console.count("CREATE VIEW")
   return {
     item,
     uid: Math.floor(Math.random() * 10000000),
@@ -301,12 +301,13 @@ export default class UVList extends LitElement {
     const visible = this.items.slice(first, last);
     const before = this.items.slice(first - 5, first);
     const after = this.items.slice(last, last + 5);
-    return [before, visible, after];
+    return [...before, ...visible, ...after];
+    // return [before, visible, after];
   }
 
   updateVisibleItems(firstUpdate = false) {
     const first = this.firstVisible();
-    const last = this.lastVisible();
+    // const last = this.lastVisible();
 
     // this.readyViews.forEach((view, viewIndex) => {
     //   if (view.item.index < first || view.item.index > last) {
@@ -319,45 +320,46 @@ export default class UVList extends LitElement {
       Third, we add visible part to readyViews and rerender views to set correct
       positions within visible list
     */
-    const [before, visible, after] = this.calculateVisibility();
+    // const [before, visible, after] = this.calculateVisibility();
+    const visible = this.calculateVisibility();
 
     // Preparing views
     const newViews = [];
     this.preparedViews = [];
     this.readyViews = [];
+    // this.views = []
     // console.trace(this.views);
-    if (!firstUpdate) {
-      this.views.forEach((view) => {
-        const found = [...before, ...visible, ...after].find(item => item.id === view.item.id)
-        // console.log(found)
-        if (found) {
-          return
-        }
-        this.unuseView(view)
-      });
-    }
-    [...before, ...visible, ...after].forEach((item, index) => {
-      const unusedView = this.unusedViews.pop() ?? createView();
+    // if (!firstUpdate) {
+    //   this.views.forEach((view) => {
+    //     const found = [...before, ...visible, ...after].find(item => item.id === view.item.id)
+    //     // console.log(found)
+    //     if (found) {
+    //       return
+    //     }
+    //     this.unuseView(view)
+    //   });
+    // }
+    visible.forEach((item, index) => {
+      // const unusedView = this.unusedViews.pop() ?? createView();
+      const unusedView = createView();
       unusedView.item = item;
       unusedView.ready = false;
       unusedView.isUsed = true;
       unusedView.item.index = index + first;
-      this.preparedViews.push(unusedView);
+      // this.preparedViews.push(unusedView);
+      this.useView(item, index + first);
       newViews.push(unusedView);
     });
     newViews.sort((one, two) => one.item.index - two.item.index);
     this.views = newViews;
-    // console.log(newViews)
-    // Render prepared views outside visible area
     this.requestUpdate();
-    // this.update();
 
     // this.updateComplete.then(() => {
     // Create list of visible veiews
-    visible.forEach((item, index) => {
-      this.useView(item, index + first);
-    });
-    this.views = this.readyViews
+    // visible.forEach((item, index) => {
+    //   this.useView(item, index + first);
+    // });
+    // this.views = this.readyViews
     this.listSize =
       this.itemsMap.get(this.items[this.items.length - 1])?.getEnd() ??
       this.listSize;
@@ -441,8 +443,8 @@ export default class UVList extends LitElement {
           ${repeat(
             this.views,
             // this.readyViews,
-            // (view) => view.item.id,
-            (view) => view.uid,
+            (view) => view.item.id,
+            // (view) => view.uid,
             // (view) => this.renderElementToFragment(view)
             this.renderElement
           )}
