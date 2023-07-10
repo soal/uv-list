@@ -3,7 +3,7 @@ import "./style.css";
 import "./lib/list/list";
 import "./lib/tree/tree";
 import { createMockData } from "./mock";
-import treeMock from "./tree-mock";
+// import treeMock from "./tree-mock";
 
 class App extends LitElement {
   static properties = {
@@ -22,8 +22,8 @@ class App extends LitElement {
 
   constructor() {
     super();
-    this.items = createMockData(100000);
-    this.treeMock = treeMock
+    this.items = createMockData();
+    // this.treeMock = treeMock
     this.selected = 5;
   }
 
@@ -69,23 +69,14 @@ class App extends LitElement {
   }
 
   renderItem(item) {
-    return html`<b>${item.id}:</b> ${item.name}`;
+    // return html`<b>${item.id}:</b> ${item.name}`;
+    return html`<b>${item.id}:</b> ${item.content}`;
   }
 
   render() {
     return html`
       <div id="global-wrapper">
-        <uv-tree
-          .nonBlockingRender="${true}"
-          .initialSize="${35}"
-          .items="${this.treeMock}"
-          .renderItem="${this.renderItem.bind(this)}"
-          .selectedId="${this.selected}"
-          @selected="${this.onSelected}"
-        >
-        </uv-tree>
-
-        <!--         <uv-list
+        <uv-list
           .nonBlockingRender="${true}"
           .initialSize="${50}"
           .items="${this.items}"
@@ -94,7 +85,6 @@ class App extends LitElement {
           @selected="${this.onSelected}"
         >
         </uv-list>
- -->
       </div>
     `;
   }
