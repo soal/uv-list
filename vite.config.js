@@ -1,18 +1,19 @@
 import { resolve } from "path";
 import { defineConfig } from "vite";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   server: {
     port: 3001,
   },
   build: {
     lib: {
       entry: resolve(__dirname, "lib/index.js"),
-      name: "UVList",
+      name: "UvList",
       fileName: "uv-list",
     },
     rollupOptions: {
-      external: [
+      plugins: [],
+      external: mode === "production" ? [] : [
         "lit",
         "lit/directives/ref.js",
         "lit/directives/class-map.js",
@@ -30,4 +31,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
