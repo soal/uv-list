@@ -14,7 +14,7 @@ class App extends LitElement {
 
   static styles = css`
     #global-wrapper {
-      height: 400px;
+      height: 700px;
       padding: 2rem 0;
       width: 400px;
     }
@@ -22,7 +22,7 @@ class App extends LitElement {
 
   constructor() {
     super();
-    this.items = createMockData();
+    this.items = createMockData(1000);
     // this.treeMock = treeMock
     this.selected = 5;
   }
