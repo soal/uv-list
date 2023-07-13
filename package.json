@@ -1,12 +1,16 @@
 {
   "name": "uv-list",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview"
   },
   "type": "module",
+  "files": [
+    "dist",
+    "@types"
+  ],
   "types": "@types/index.d.ts",
   "main": "./dist/uv-list.umd.cjs",
   "module": "./dist/uv-list.js",
