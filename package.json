@@ -10,6 +10,7 @@
   "files": [
     "dist"
   ],
+  "types": "@types/index.d.ts",
   "main": "./dist/uv-list.umd.cjs",
   "module": "./dist/uv-list.js",
   "exports": {
