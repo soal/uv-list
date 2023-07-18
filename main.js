@@ -55,6 +55,10 @@ class App extends LitElement {
     ].concat(this.items);
   }
 
+  append() {
+    this.items = this.items.concat(createMockData(100))
+  }
+
   changeOrder() {
     const items = Array.from(this.items);
     items[0] = this.items[1];
@@ -80,12 +84,16 @@ class App extends LitElement {
           .nonBlockingRender="${true}"
           .initialSize="${50}"
           .items="${this.items}"
-          .renderItem="${this.renderItem.bind(this)}"
+          .renderItem="${this.renderItem}"
           .selectedId="${this.selected}"
           @selected="${this.onSelected}"
         >
         </uv-list>
       </div>
+      <button @click="${this.append}">Append</button>
+      <button @click="${this.pushItem}">Push</button>
+      <button @click="${this.unshiftItem}">Unshift</button>
+      <button @click="${this.changeOrder}">Change Order</button>
     `;
   }
 }
