@@ -81,7 +81,6 @@ class App extends LitElement {
     return html`
       <div id="global-wrapper">
         <uv-list
-          .nonBlockingRender="${true}"
           .initialSize="${50}"
           .items="${this.items}"
           .renderItem="${this.renderItem}"
