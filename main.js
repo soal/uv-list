@@ -95,9 +95,10 @@ class App extends LitElement {
     return html`
       <div id="global-wrapper">
         <uv-list
-          .initialSize="${50}"
+          .initialSize="${100}"
           .items="${this.items}"
           .renderItem="${this.renderItem}"
+          .keyboardNavigation="${true}"
           .selectedId="${this.selected}"
           @selected="${this.onSelected}"
         >
