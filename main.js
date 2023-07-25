@@ -91,6 +91,14 @@ class App extends LitElement {
     </div>`;
   }
 
+  before() {
+    return "START"
+  }
+
+  after() {
+    return "END"
+  }
+
   render() {
     return html`
       <div id="global-wrapper">
@@ -100,6 +108,9 @@ class App extends LitElement {
           .renderItem="${this.renderItem}"
           .keyboardNavigation="${true}"
           .selectedId="${this.selected}"
+          .before="${this.before}"
+          .after="${this.after}"
+
           @selected="${this.onSelected}"
         >
         </uv-list>
