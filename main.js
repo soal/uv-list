@@ -108,6 +108,7 @@ class App extends LitElement {
           .renderItem="${this.renderItem}"
           .keyboardEnabled="${true}"
           .vimNavigation="${true}"
+          .keyboardThrottle="${50}"
           .selectedId="${this.selected}"
           .before="${this.before}"
           .after="${this.after}"
