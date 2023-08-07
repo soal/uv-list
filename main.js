@@ -108,11 +108,10 @@ class App extends LitElement {
           .renderItem="${this.renderItem}"
           .keyboardEnabled="${true}"
           .vimNavigation="${true}"
-          .keyboardThrottle="${50}"
+          .keyboardThrottle="${0}"
           .selectedId="${this.selected}"
           .before="${this.before}"
           .after="${this.after}"
-
           @selected="${this.onSelected}"
         >
         </uv-list>
