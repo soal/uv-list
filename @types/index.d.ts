@@ -44,11 +44,11 @@ export class UvTree extends HTMLElement {
   keyboardEnabled: boolean;
   keyboardThrottle: number;
   vimNavigation: boolean;
-  searchMode: boolean;
+  searchParams: any;
+  searchQuery: string;
   skipPrepare: boolean;
   trackShift: number;
   showDepth: number;
-  // onClick
   openPadding: number;
   updateVisibleItems: () => void;
 }
