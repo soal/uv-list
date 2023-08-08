@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => ({
       name: "UvList",
       fileName: "uv-list",
     },
+    sourcemap: true,
     rollupOptions: {
       plugins: [],
       external: mode === "production" ? [] : [

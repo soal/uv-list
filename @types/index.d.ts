@@ -26,6 +26,7 @@ export class UvList extends HTMLElement {
   keyboardThrottle: number;
   vimNavigation: boolean;
   updateVisibleItems: () => void;
+  mounted: boolean
 }
 
 export class UvTree extends HTMLElement {
@@ -51,4 +52,5 @@ export class UvTree extends HTMLElement {
   showDepth: number;
   openPadding: number;
   updateVisibleItems: () => void;
+  mounted: boolean
 }
