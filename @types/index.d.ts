@@ -22,11 +22,12 @@ export class UvList extends HTMLElement {
   selectedId: string | number;
   before: () => string | HTMLElement | TemplateResult<1>;
   after: () => string | HTMLElement | TemplateResult<1>;
+  empty: () => string | HTMLElement | TemplateResult<1>;
   keyboardEnabled: boolean;
   keyboardThrottle: number;
   vimNavigation: boolean;
   updateVisibleItems: () => void;
-  mounted: boolean
+  mounted: boolean;
 }
 
 export class UvTree extends HTMLElement {
@@ -42,6 +43,7 @@ export class UvTree extends HTMLElement {
   selectedId: string | number;
   before: () => string | HTMLElement | TemplateResult<1>;
   after: () => string | HTMLElement | TemplateResult<1>;
+  empty: () => string | HTMLElement | TemplateResult<1>;
   keyboardEnabled: boolean;
   keyboardThrottle: number;
   vimNavigation: boolean;
@@ -52,5 +54,5 @@ export class UvTree extends HTMLElement {
   showDepth: number;
   openPadding: number;
   updateVisibleItems: () => void;
-  mounted: boolean
+  mounted: boolean;
 }
