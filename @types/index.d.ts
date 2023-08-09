@@ -28,6 +28,8 @@ export class UvList extends HTMLElement {
   vimNavigation: boolean;
   updateVisibleItems: () => void;
   mounted: boolean;
+  scrollToTop: () => void
+  scrollToItem: (index: number) => void
 }
 
 export class UvTree extends HTMLElement {
@@ -54,5 +56,6 @@ export class UvTree extends HTMLElement {
   showDepth: number;
   openPadding: number;
   updateVisibleItems: () => void;
+  scrollToTop: () => void
   mounted: boolean;
 }
