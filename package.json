@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "watch": "vite build --watch",
     "serve": "vite preview"
   },
   "type": "module",
@@ -27,7 +28,7 @@
     "vite": "^3.0.8"
   },
   "dependencies": {
-    "lit": "^2.7.5",
+    "lit": "^2.8.0",
     "lodash.throttle": "^4.1.1"
   }
 }
